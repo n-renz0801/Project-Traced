@@ -17,13 +17,11 @@
 }
 
 .dashboard-title {
-  position: relative;
-  top: 20px;
   font-size: 2.7rem;
 }
 
 .dashboard-subtitle {
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   color: var(--text-muted, #718096);
   margin: 0;
   letter-spacing: 0.04em;
