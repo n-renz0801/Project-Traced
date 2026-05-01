@@ -1,25 +1,206 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ces.css') }}" />
+{% endblock %}{% block content %}
+<div class="ces-header">
+  <div>
+    <h1>CES — Chief Education Supervisor</h1>
+    <p class="record-count">
+      {{ records|length }} record{{ 's' if records|length != 1 else '' }}
+    </p>
+  </div>
+  <a href="{{ url_for('ces_add') }}" class="btn-add">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+    Add Record
+  </a>
+</div>
 
-{% block content %}
-<h1>CES — Chief Education Supervisor</h1>
-
-<table>
+<div class="table-wrapper">
+  <table class="ces-table">
     <thead>
-        <tr>
-            <th>Code</th>
-            <th>Process</th>
-            <th>Name of School</th>
-            <th>Date Received</th>
-            <th>Status</th>
-            <th>Date Completed / Forwarded</th>
-            <th>Processing Time (No. of Days)</th>
-            <th>Remarks</th>
-        </tr>
+      <tr>
+        <th>Code</th>
+        <th>Process</th>
+        <th>Name of<br />School</th>
+        <th>Date<br />Received</th>
+        <th>Status</th>
+        <th>Date Completed /<br />Forwarded</th>
+        <th>Processing<br />Time (Days)</th>
+        <th>Remarks</th>
+        <th></th>
+      </tr>
     </thead>
     <tbody>
-        <tr>
-            <td colspan="8">No records yet.</td>
-        </tr>
+      {% if records %} {% for r in records %}
+      <tr>
+        <td><span class="code-badge">{{ r.code }}</span></td>
+        <td>{{ r.process }}</td>
+        <td>{{ r.school }}</td>
+        <td>
+          {{ r.date_received.strftime('%b %d, %Y') if r.date_received else '—'
+          }}
+        </td>
+        <td>
+          <span
+            class="status-pill status-{{ r.status | lower | replace(' ', '-') | replace('/', '') }}"
+          >
+            {{ r.status }}
+          </span>
+        </td>
+        <td>
+          {{ r.date_completed.strftime('%b %d, %Y') if r.date_completed else '—'
+          }}
+        </td>
+        <td class="days-cell">
+          {{ r.processing_days if r.processing_days is not none else '—' }}
+        </td>
+        <td class="remarks-cell">{{ r.remarks or '—' }}</td>
+        <td class="actions-cell">
+          <div class="overflow-menu">
+            <button
+              class="overflow-trigger"
+              title="Actions"
+              onclick="toggleMenu(this)"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <circle cx="12" cy="5" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="12" cy="19" r="1.5" />
+              </svg>
+            </button>
+            <div class="overflow-dropdown">
+              <a
+                href="{{ url_for('ces_edit', record_id=r.id) }}"
+                class="overflow-item"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                  />
+                </svg>
+                Edit
+              </a>
+              <form
+                method="POST"
+                action="{{ url_for('ces_delete', record_id=r.id) }}"
+                onsubmit="return confirm('Delete record {{ r.code }}? This cannot be undone.');"
+              >
+                <button
+                  type="submit"
+                  class="overflow-item overflow-item--danger"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                  </svg>
+                  Delete
+                </button>
+              </form>
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% endfor %} {% else %}
+      <tr>
+        <td colspan="9" class="empty-row">
+          <div class="empty-state">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M9 21V9" />
+            </svg>
+            <p>
+              No records yet. Click <strong>Add Record</strong> to get started.
+            </p>
+          </div>
+        </td>
+      </tr>
+      {% endif %}
     </tbody>
-</table>
+  </table>
+</div>
+
+<script>
+  function toggleMenu(btn) {
+    const menu = btn.closest(".overflow-menu");
+    const dropdown = menu.querySelector(".overflow-dropdown");
+
+    const rect = btn.getBoundingClientRect();
+
+    dropdown.style.top = rect.bottom + "px";
+    dropdown.style.left = rect.right - 130 + "px";
+
+    const isOpen = menu.classList.contains("open");
+
+    // close all first
+    document
+      .querySelectorAll(".overflow-menu.open")
+      .forEach((m) => m.classList.remove("open"));
+
+    if (!isOpen) menu.classList.add("open");
+  }
+
+  document.addEventListener("click", (e) => {
+    const isTrigger = e.target.closest(".overflow-trigger");
+    const isDropdown = e.target.closest(".overflow-dropdown");
+
+    if (!isTrigger && !isDropdown) {
+      document
+        .querySelectorAll(".overflow-menu.open")
+        .forEach((m) => m.classList.remove("open"));
+    }
+  });
+</script>
 {% endblock %}

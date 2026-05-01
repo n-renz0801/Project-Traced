@@ -1,14 +1,105 @@
 {% extends "base.html" %} {% block content %}
-<h1>Project TRACED Dashboard</h1>
+<div class="dashboard-page">
+  <div class="dashboard-header">
+    <div class="header-text">
+      <h1 class="dashboard-title">Project TRACED</h1>
+      <p class="dashboard-subtitle">
+        <!-- Tracking Records And Consolidated Education Data -->
+      </p>
+    </div>
+    <div class="header-date" id="live-date"></div>
+  </div>
 
-<h2>Sections</h2>
-<ul>
-  {% for section in sections %}
-  <li>
-    <a href="{{ url_for(section.id) }}">
-      <strong>{{ section.label }}</strong> — {{ section.full }}
+  <div class="stats-overview">
+    <div class="stat-card total-card">
+      <span class="stat-icon">📋</span>
+      <div class="stat-body">
+        <span class="stat-value"
+          >{{ sections | sum(attribute='record_count') }}</span
+        >
+        <span class="stat-label">Total Records</span>
+      </div>
+    </div>
+    <div class="stat-card avg-card">
+      <span class="stat-icon">⏱️</span>
+      <div class="stat-body">
+        <span class="stat-value">
+          {% set all_avgs = sections | selectattr('avg_processing_days') |
+          map(attribute='avg_processing_days') | list %} {% if all_avgs %} {{
+          (all_avgs | sum / all_avgs | length) | round(1) }} {% else %}—{% endif
+          %}
+        </span>
+        <span class="stat-label">Avg. Processing Days</span>
+      </div>
+    </div>
+    <!-- <div class="stat-card sections-card">
+      <span class="stat-icon">🗂️</span>
+      <div class="stat-body">
+        <span class="stat-value">{{ sections | length }}</span>
+        <span class="stat-label">Active Sections</span>
+      </div>
+    </div> -->
+  </div>
+
+  <h2 class="sections-heading">Sections</h2>
+
+  <div class="sections-grid">
+    {% for section in sections %}
+    <a href="{{ url_for(section.id) }}" class="section-card">
+      <div class="section-card-header">
+        <div class="section-id-badge">{{ section.id | upper }}</div>
+        <div
+          class="section-status-dot {% if section.record_count > 0 %}active{% endif %}"
+        ></div>
+      </div>
+
+      <div class="section-card-body">
+        <h3 class="section-label">{{ section.label }}</h3>
+        <p class="section-full">{{ section.full }}</p>
+      </div>
+
+      <div class="section-card-stats">
+        <div class="section-stat">
+          <span class="section-stat-value"
+            >{{ section.record_count if section.record_count is defined else 0
+            }}</span
+          >
+          <span class="section-stat-label">Records</span>
+        </div>
+        <div class="section-stat-divider"></div>
+        <div class="section-stat">
+          <span class="section-stat-value">
+            {% if section.avg_processing_days is defined and
+            section.avg_processing_days %} {{ section.avg_processing_days |
+            round(1) }} {% else %} — {% endif %}
+          </span>
+          <span class="section-stat-label">Avg. Days</span>
+        </div>
+      </div>
+
+      <div class="section-card-arrow">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </div>
     </a>
-  </li>
-  {% endfor %}
-</ul>
+    {% endfor %}
+  </div>
+</div>
+
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/home.css') }}"
+/>
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
 {% endblock %}
