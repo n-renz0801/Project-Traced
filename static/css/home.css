@@ -12,17 +12,15 @@
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 2.5rem;
-  padding-bottom: 1.5rem;
+  padding-bottom: 1.2rem;
   border-bottom: 1.5px solid var(--border, #e2e8f0);
 }
 
-/* .dashboard-title {
-  font-size: 2.2rem;
-  font-weight: 400;
-  color: var(--text-primary, #1a202c);
-  margin: 0 0 0.2rem;
-  letter-spacing: -0.02em;
-} */
+.dashboard-title {
+  position: relative;
+  top: 20px;
+  font-size: 2.7rem;
+}
 
 .dashboard-subtitle {
   font-size: 0.82rem;
@@ -37,7 +35,6 @@
   font-size: 0.8rem;
   color: var(--text-muted, #718096);
   white-space: nowrap;
-  padding-bottom: 2px;
 }
 
 /* ── Overview Stats ─────────────────────────────────────────────────────────── */
@@ -79,7 +76,7 @@
 }
 
 .stat-value {
-  font-size: 1.7rem;
+  font-size: 2.5rem;
   font-weight: 600;
   color: var(--text-primary, #1a202c);
   line-height: 1;
@@ -96,7 +93,7 @@
 /* ── Sections Heading ────────────────────────────────────────────────────────── */
 
 .sections-heading {
-  font-size: 0.78rem;
+  font-size: 1rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -189,7 +186,7 @@
 }
 
 .section-label {
-  font-size: 1.05rem;
+  font-size: 1.7rem;
   font-weight: 600;
   color: var(--text-primary, #1a202c);
   margin: 0 0 0.2rem;
@@ -221,7 +218,7 @@
 }
 
 .section-stat-value {
-  font-size: 1.15rem;
+  font-size: 1.7rem;
   font-weight: 600;
   color: var(--text-primary, #1a202c);
   line-height: 1;
