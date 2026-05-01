@@ -1,0 +1,14 @@
+{% extends "base.html" %} {% block content %}
+<h1>Project TRACED Dashboard</h1>
+
+<h2>Sections</h2>
+<ul>
+  {% for section in sections %}
+  <li>
+    <a href="{{ url_for(section.id) }}">
+      <strong>{{ section.label }}</strong> — {{ section.full }}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

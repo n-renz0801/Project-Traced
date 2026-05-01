@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/base.css') }}"
+    />
+    <title>Project TRACED</title>
+  </head>
+  <body>
+    <!-- ===== HEADER: Logos ===== -->
+    <header>
+      <div id="logo-bar">
+        <img
+          src="{{ url_for('static', filename='images/deped.png') }}"
+          alt="DepEd Logo"
+        />
+        <img
+          src="{{ url_for('static', filename='images/bagong_pilipinas.png') }}"
+          alt="Bagong Pilipinas Logo"
+        />
+        <img
+          src="{{ url_for('static', filename='images/antipolo_division.png') }}"
+          alt="City Schools Division Office of Antipolo Logo"
+        />
+        <img
+          src="{{ url_for('static', filename='images/i_love_sgod.png') }}"
+          alt="I Love SGOD Logo"
+        />
+        <img
+          src="{{ url_for('static', filename='images/project_traced.png') }}"
+          alt="Project TRACED Logo"
+        />
+      </div>
+    </header>
+
+    <!-- ===== NAVIGATION BAR ===== -->
+    <nav>
+      <ul>
+        <li>
+          <!-- prettier-ignore -->
+          <a href="{{ url_for('home') }}"
+                   {% if active == 'home' %}class="active"{% endif %}>
+                    Home
+                </a>
+        </li>
+        {% for section in sections %}
+        <li>
+          <!-- prettier-ignore -->
+          <a href="{{ url_for(section.id) }}"
+                   {% if active == section.id %}class="active"{% endif %}>
+                    {{ section.label }}
+                </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
+
+    <!-- ===== PAGE CONTENT ===== -->
+    <main>{% block content %}{% endblock %}</main>
+
+    <script
+      type="module"
+      src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"
+    ></script>
+  </body>
+</html>

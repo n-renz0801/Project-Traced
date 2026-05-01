@@ -1,0 +1,323 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+:root {
+  --navy: #0033a0;
+  --navy-dark: #00247a;
+  --navy-deep: #001550;
+  --gold: #fcd116;
+  --gold-dark: #d4a900;
+  --white: #ffffff;
+  --off-white: #f4f6fb;
+  --text: #1a1a2e;
+  --text-light: #5a6a8a;
+  --border: #d0d8ec;
+  --shadow: rgba(0, 51, 160, 0.12);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-weight: 400;
+  background-color: white;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Header: Logo Bar ─────────────────────────────────────── */
+header {
+  background: white;
+  padding: 14px 40px;
+  border-bottom: 3px solid var(--gold);
+  box-shadow: 0 4px 16px var(--shadow);
+}
+
+#logo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+#logo-bar img {
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Gold dividers between logos */
+/* #logo-bar img:not(:last-child)::after {
+  content: "";
+} */
+
+#logo-bar {
+  position: relative;
+}
+
+/* ── Navigation Bar ───────────────────────────────────────── */
+nav {
+  background-color: var(--navy);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px var(--shadow);
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  flex-wrap: wrap;
+  padding: 0 24px;
+  gap: 0;
+}
+
+nav ul li a {
+  display: block;
+  padding: 14px 25px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  position: relative;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+/* Underline grow effect */
+nav ul li a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background-color: var(--gold);
+  border-radius: 2px 2px 0 0;
+  transition: width 0.25s ease;
+}
+
+nav ul li a:hover {
+  color: var(--white);
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+nav ul li a:hover::after {
+  width: 60%;
+}
+
+/* Active page highlight */
+nav ul li a.active {
+  color: var(--gold);
+  background-color: rgba(252, 209, 22, 0.1);
+}
+
+nav ul li a.active::after {
+  width: 80%;
+  background-color: var(--gold);
+}
+
+/* ── Main Content Area ────────────────────────────────────── */
+main {
+  flex: 1;
+  padding: 36px 48px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Page Headings ────────────────────────────────────────── */
+main h1 {
+  font-size: 1.9rem;
+  color: var(--navy);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+main h1 + p,
+main h1 + h2 {
+  margin-top: 8px;
+}
+
+main h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-light);
+  margin-bottom: 16px;
+  margin-top: 28px;
+}
+
+main p {
+  color: var(--text-light);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+/* ── Section Divider Line under page title ────────────────── */
+main h1::after {
+  content: "";
+  display: block;
+  width: 56px;
+  height: 4px;
+  background: var(--gold);
+  border-radius: 2px;
+  margin-top: 10px;
+}
+
+/* ── Home Page Section Links ──────────────────────────────── */
+main ul {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+main ul li a {
+  display: block;
+  padding: 14px 18px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--navy);
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  box-shadow: 0 1px 4px var(--shadow);
+  transition:
+    border-left-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+main ul li a:hover {
+  border-left-color: var(--gold-dark);
+  box-shadow: 0 4px 14px var(--shadow);
+  transform: translateX(3px);
+}
+
+main ul li a strong {
+  display: block;
+  font-size: 1rem;
+  color: var(--navy);
+  margin-bottom: 2px;
+}
+
+/* ── Table ────────────────────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--white);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 16px var(--shadow);
+  margin-top: 24px;
+  font-size: 0.88rem;
+}
+
+thead tr {
+  background: linear-gradient(90deg, var(--navy-deep), var(--navy));
+  color: var(--white);
+}
+
+thead th {
+  padding: 13px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: none;
+}
+
+/* Gold accent on first header cell */
+thead th:first-child {
+  border-left: 4px solid var(--gold);
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease;
+}
+
+tbody tr:last-child {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background-color: #eef2fb;
+}
+
+tbody td {
+  padding: 12px 16px;
+  color: var(--text);
+  vertical-align: middle;
+  border: none;
+}
+
+/* "No records yet" empty state */
+tbody td[colspan] {
+  text-align: center;
+  color: var(--text-light);
+  font-style: italic;
+  padding: 40px 16px;
+  font-size: 0.9rem;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+  main {
+    padding: 24px 20px;
+  }
+
+  #logo-bar img {
+    height: 46px;
+  }
+
+  nav ul li a {
+    padding: 12px 12px;
+    font-size: 0.75rem;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 600px) {
+  header {
+    padding: 12px 16px;
+  }
+
+  #logo-bar {
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  #logo-bar img {
+    height: 38px;
+  }
+}
