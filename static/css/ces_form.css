@@ -74,7 +74,6 @@ label {
   border: 1.5px solid #bfdbfe;
   border-radius: 8px;
   padding: 0.5rem 1rem;
-  font-family: "Courier New", monospace;
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -202,7 +201,7 @@ label {
   align-items: center;
   gap: 0.4rem;
   padding: 0.6rem 1.6rem;
-  background: #1d4ed8;
+  background: #0033a0;
   color: #fff;
   border: none;
   border-radius: 8px;
