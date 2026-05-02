@@ -144,7 +144,8 @@
   <h2 class="sections-heading">Sections</h2>
 
   <div class="sections-grid">
-    {% set card_colors = ['navy', 'gold', 'teal', 'blue', 'green', 'violet'] %}
+    <!-- {% set card_colors = ['navy', 'gold', 'teal', 'blue', 'green', 'violet'] %} -->
+    {% set card_colors = ['navy', 'gold', 'teal', 'green', 'violet', 'blue'] %}
     {% for section in sections %}
     <a
       href="{{ url_for(section.id) }}"
