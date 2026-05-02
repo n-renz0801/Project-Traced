@@ -1,5 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════════════════════════════ */
 * {
   margin: 0;
   padding: 0;
@@ -7,6 +10,9 @@
   font-family: "Poppins", sans-serif;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRAND PALETTE  (single source of truth — never redeclare in page CSS)
+═══════════════════════════════════════════════════════════════════════════ */
 :root {
   --navy: #0033a0;
   --navy-dark: #00247a;
@@ -21,6 +27,9 @@
   --shadow: rgba(0, 51, 160, 0.12);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   DOCUMENT SCAFFOLD
+═══════════════════════════════════════════════════════════════════════════ */
 html,
 body {
   height: 100%;
@@ -28,22 +37,25 @@ body {
 
 body {
   font-weight: 400;
-  background-color: white;
+  background-color: var(--white);
   color: var(--text);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-/* ── Header: Logo Bar ─────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   HEADER — Logo Bar
+═══════════════════════════════════════════════════════════════════════════ */
 header {
-  background: white;
+  background: var(--white);
   padding: 14px 40px;
   border-bottom: 3px solid var(--gold);
   box-shadow: 0 4px 16px var(--shadow);
 }
 
 #logo-bar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -56,16 +68,9 @@ header {
   object-fit: contain;
 }
 
-/* Gold dividers between logos */
-/* #logo-bar img:not(:last-child)::after {
-  content: "";
-} */
-
-#logo-bar {
-  position: relative;
-}
-
-/* ── Navigation Bar ───────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAVIGATION BAR
+═══════════════════════════════════════════════════════════════════════════ */
 nav {
   background-color: var(--navy);
   position: sticky;
@@ -99,7 +104,6 @@ nav ul li a {
     background 0.2s ease;
 }
 
-/* Underline grow effect */
 nav ul li a::after {
   content: "";
   position: absolute;
@@ -122,7 +126,6 @@ nav ul li a:hover::after {
   width: 60%;
 }
 
-/* Active page highlight */
 nav ul li a.active {
   color: var(--gold);
   background-color: rgba(252, 209, 22, 0.1);
@@ -133,7 +136,9 @@ nav ul li a.active::after {
   background-color: var(--gold);
 }
 
-/* ── Main Content Area ────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN CONTENT AREA
+═══════════════════════════════════════════════════════════════════════════ */
 main {
   flex: 1;
   padding: 36px 48px;
@@ -142,7 +147,9 @@ main {
   margin: 0 auto;
 }
 
-/* ── Page Headings ────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE HEADINGS
+═══════════════════════════════════════════════════════════════════════════ */
 main h1 {
   font-size: 1.9rem;
   color: var(--navy);
@@ -172,18 +179,9 @@ main p {
   margin-bottom: 10px;
 }
 
-/* ── Section Divider Line under page title ────────────────── */
-/* main h1::after {
-  content: "";
-  display: block;
-  width: 56px;
-  height: 4px;
-  background: var(--gold);
-  border-radius: 2px;
-  margin-top: 10px;
-} */
-
-/* ── Home Page Section Links ──────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   HOME PAGE — Section Links
+═══════════════════════════════════════════════════════════════════════════ */
 main ul {
   list-style: none;
   display: grid;
@@ -223,24 +221,44 @@ main ul li a strong {
   margin-bottom: 2px;
 }
 
-/* ── Table ────────────────────────────────────────────────── */
-table {
+/* ═══════════════════════════════════════════════════════════════════════════
+   TABLE — Shared styles used across ALL section pages
+   Scope: any <table> inside .table-wrapper
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* Scroll container */
+.table-wrapper {
+  border-radius: 12px;
+  overflow-x: auto;
+  box-shadow: 0 2px 16px var(--shadow);
+  background: var(--white);
+  margin-top: 24px;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #c0cce8;
+  border-radius: 3px;
+}
+
+/* Base table */
+.table-wrapper table {
   width: 100%;
   border-collapse: collapse;
   background: var(--white);
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 2px 16px var(--shadow);
-  margin-top: 24px;
   font-size: 0.88rem;
 }
 
-thead tr {
+/* ── Head ── */
+.table-wrapper thead tr {
   background: linear-gradient(90deg, var(--navy-deep), var(--navy));
   color: var(--white);
 }
 
-thead th {
+.table-wrapper thead th {
   padding: 13px 16px;
   text-align: left;
   font-weight: 600;
@@ -249,35 +267,38 @@ thead th {
   text-transform: uppercase;
   white-space: nowrap;
   border: none;
+  position: relative;
+  user-select: none;
 }
 
 /* Gold accent on first header cell */
-thead th:first-child {
+.table-wrapper thead th:first-child {
   border-left: 4px solid var(--gold);
 }
 
-tbody tr {
+/* ── Body ── */
+.table-wrapper tbody tr {
   border-bottom: 1px solid var(--border);
   transition: background 0.15s ease;
 }
 
-tbody tr:last-child {
+.table-wrapper tbody tr:last-child {
   border-bottom: none;
 }
 
-tbody tr:hover {
+.table-wrapper tbody tr:hover {
   background-color: #eef2fb;
 }
 
-tbody td {
+.table-wrapper tbody td {
   padding: 12px 16px;
   color: var(--text);
   vertical-align: middle;
   border: none;
 }
 
-/* "No records yet" empty state */
-tbody td[colspan] {
+/* Empty state cell */
+.table-wrapper tbody td[colspan] {
   text-align: center;
   color: var(--text-light);
   font-style: italic;
@@ -285,7 +306,271 @@ tbody td[colspan] {
   font-size: 0.9rem;
 }
 
-/* ── Responsive ───────────────────────────────────────────── */
+/* ── Sortable columns ── */
+.table-wrapper thead th.sortable {
+  cursor: pointer;
+  transition: color 0.18s ease;
+}
+
+.table-wrapper thead th.sortable::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gold);
+  border-radius: 2px 2px 0 0;
+  transform: scaleX(0);
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+  opacity: 0;
+}
+
+.table-wrapper thead th.sortable:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.table-wrapper thead th.sortable:hover::after {
+  transform: scaleX(0.5);
+  opacity: 0.5;
+}
+
+.table-wrapper thead th.sort-active {
+  color: var(--gold);
+}
+
+.table-wrapper thead th.sort-active::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+/* Sort arrow indicator */
+.sort-indicator {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  min-width: 10px;
+  color: var(--gold);
+}
+
+/* Idle ⇅ hint on unsorted columns */
+.table-wrapper thead th.sortable:not(.sort-active) .sort-indicator::after {
+  content: "⇅";
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* Active column body highlight */
+.table-wrapper tbody td.active {
+  color: var(--navy);
+  font-weight: 600;
+}
+
+/* Hidden rows (search filter) */
+.table-wrapper tbody tr.row-hidden {
+  display: none;
+}
+
+/* ── Shared cell types ── */
+.code-badge {
+  display: inline-block;
+  background: #eff6ff;
+  color: var(--navy);
+  border: 1px solid #bfdbfe;
+  border-radius: 5px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.days-cell {
+  text-align: center;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.remarks-cell {
+  color: var(--text-light);
+  font-style: italic;
+  white-space: normal;
+  word-break: break-word;
+  font-size: 0.82rem;
+}
+
+/* ── Status pills ── */
+.status-pill {
+  display: inline-block;
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-not-yet-started {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+.status-on-going {
+  background: #fef3c7;
+  color: #92400e;
+}
+.status-completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+.status-forwarded-to-cid {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+.status-forwarded-to-osds {
+  background: #dbeafe;
+  color: var(--navy);
+}
+.status-scheduled {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.status-rescheduled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ── Three-dot overflow menu ── */
+.actions-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.overflow-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.overflow-trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  color: var(--text-light);
+  transition:
+    background 0.15s,
+    color 0.15s;
+  line-height: 0;
+}
+
+.overflow-trigger:hover {
+  background: var(--off-white);
+  color: var(--text);
+}
+
+.overflow-dropdown {
+  display: none;
+  position: fixed;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px var(--shadow);
+  width: 130px;
+  z-index: 3000;
+  overflow: hidden;
+}
+
+.overflow-menu.open .overflow-dropdown {
+  display: block;
+}
+
+.overflow-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.875rem;
+  color: var(--text);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.1s;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.overflow-item:hover {
+  background: var(--off-white);
+}
+
+.overflow-item--danger {
+  color: #dc2626;
+}
+.overflow-item--danger:hover {
+  background: #fef2f2;
+}
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: #9ca3af;
+  padding: 3rem 1rem;
+}
+
+.empty-state svg {
+  opacity: 0.35;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #9ca3af;
+  font-style: normal;
+}
+
+/* ── Table footer (search result count) ── */
+.table-footer {
+  display: none;
+  margin-top: 0.65rem;
+  padding: 0 0.2rem;
+  font-size: 0.78rem;
+  color: var(--text-light);
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRINT
+═══════════════════════════════════════════════════════════════════════════ */
+@media print {
+  .table-wrapper {
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  .table-wrapper table {
+    font-size: 0.75rem;
+  }
+
+  .table-wrapper th,
+  .table-wrapper td {
+    padding: 0.5rem 0.6rem;
+  }
+
+  .table-wrapper tbody tr.row-hidden {
+    display: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
   main {
     padding: 24px 20px;
@@ -300,9 +585,7 @@ tbody td[colspan] {
     font-size: 0.75rem;
   }
 
-  table {
-    display: block;
-    overflow-x: auto;
+  .table-wrapper {
     white-space: nowrap;
   }
 }

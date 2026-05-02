@@ -1,124 +1,287 @@
 {% extends "base.html" %} {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/ces.css') }}" />
 {% endblock %}{% block content %}
-<div class="ces-header">
-  <div>
-    <h1>CES — Chief Education Supervisor</h1>
-    <p class="record-count">
-      {{ records|length }} record{{ 's' if records|length != 1 else '' }}
-    </p>
+
+<div class="ces-page">
+  <!-- ── Header ── -->
+  <div class="ces-header">
+    <div class="ces-header__text">
+      <h1 class="ces-title">
+        CES <span class="ces-title-sub">— Chief Education Supervisor</span>
+      </h1>
+      <p class="record-count" id="record-count">
+        {{ records|length }} record{{ 's' if records|length != 1 else '' }}
+      </p>
+    </div>
+    <div class="ces-header__actions">
+      <!-- Search -->
+      <div class="search-wrap">
+        <svg
+          class="search-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          type="search"
+          id="ces-search"
+          class="search-input"
+          placeholder="Search records…"
+          autocomplete="off"
+        />
+        <button
+          class="search-clear"
+          id="search-clear"
+          title="Clear search"
+          style="display: none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Export -->
+      <div class="export-wrap" id="export-wrap">
+        <button class="export-trigger" id="export-trigger" title="Export data">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Export
+          <svg
+            class="export-chevron"
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <div class="export-dropdown" id="export-dropdown">
+          <button class="export-item" id="export-csv">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+              />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            Export CSV
+          </button>
+          <button class="export-item" id="export-json">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>
+            Export JSON
+          </button>
+          <button class="export-item" id="export-print">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="6 9 6 2 18 2 18 9" />
+              <path
+                d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
+              />
+              <rect x="6" y="14" width="12" height="8" />
+            </svg>
+            Print / PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- Add Record -->
+      <a href="{{ url_for('ces_add') }}" class="btn-add">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add Record
+      </a>
+    </div>
   </div>
-  <a href="{{ url_for('ces_add') }}" class="btn-add">
+
+  <!-- ── No-results banner (hidden by default) ── -->
+  <div class="no-results" id="no-results" style="display: none">
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
+      width="32"
+      height="32"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      stroke-width="2.5"
+      stroke-width="1.5"
       stroke-linecap="round"
       stroke-linejoin="round"
     >
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
-    Add Record
-  </a>
-</div>
+    <p>No records match <strong id="no-results-term"></strong></p>
+    <button class="no-results-reset" onclick="resetSearch()">
+      Clear search
+    </button>
+  </div>
 
-<div class="table-wrapper">
-  <table class="ces-table">
-    <thead>
-      <tr>
-        <th>Code</th>
-        <th>Process</th>
-        <th>Name of<br />School</th>
-        <th>Date<br />Received</th>
-        <th>Status</th>
-        <th>Date Completed /<br />Forwarded</th>
-        <th>Processing<br />Time (Days)</th>
-        <th>Remarks</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% if records %} {% for r in records %}
-      <tr>
-        <td><span class="code-badge">{{ r.code }}</span></td>
-        <td>{{ r.process }}</td>
-        <td>{{ r.school }}</td>
-        <td>
-          {{ r.date_received.strftime('%b %d, %Y') if r.date_received else '—'
-          }}
-        </td>
-        <td>
-          <span
-            class="status-pill status-{{ r.status | lower | replace(' ', '-') | replace('/', '') }}"
+  <!-- ── Table ── -->
+  <div class="table-wrapper">
+    <table class="ces-table" id="ces-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-col="0" data-type="text">
+            Code <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="1" data-type="text">
+            Process <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="2" data-type="text">
+            Name of<br />School <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="3" data-type="date">
+            Date<br />Received <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="4" data-type="text">
+            Status <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="5" data-type="date">
+            Date Completed /<br />Forwarded <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="6" data-type="number">
+            Processing<br />Time (Days) <span class="sort-indicator"></span>
+          </th>
+          <th>Remarks</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody id="ces-tbody">
+        {% if records %} {% for r in records %}
+        <tr data-id="{{ r.id }}">
+          <td><span class="code-badge">{{ r.code }}</span></td>
+          <td>{{ r.process }}</td>
+          <td>{{ r.school }}</td>
+          <td
+            data-sort="{{ r.date_received.strftime('%Y%m%d') if r.date_received else '00000000' }}"
           >
-            {{ r.status }}
-          </span>
-        </td>
-        <td>
-          {{ r.date_completed.strftime('%b %d, %Y') if r.date_completed else '—'
-          }}
-        </td>
-        <td class="days-cell">
-          {{ r.processing_days if r.processing_days is not none else '—' }}
-        </td>
-        <td class="remarks-cell">{{ r.remarks or '—' }}</td>
-        <td class="actions-cell">
-          <div class="overflow-menu">
-            <button
-              class="overflow-trigger"
-              title="Actions"
-              onclick="toggleMenu(this)"
+            {{ r.date_received.strftime('%b %d, %Y') if r.date_received else '—'
+            }}
+          </td>
+          <td>
+            <span
+              class="status-pill status-{{ r.status | lower | replace(' ', '-') | replace('/', '') }}"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <circle cx="12" cy="5" r="1.5" />
-                <circle cx="12" cy="12" r="1.5" />
-                <circle cx="12" cy="19" r="1.5" />
-              </svg>
-            </button>
-            <div class="overflow-dropdown">
-              <a
-                href="{{ url_for('ces_edit', record_id=r.id) }}"
-                class="overflow-item"
+              {{ r.status }}
+            </span>
+          </td>
+          <td
+            data-sort="{{ r.date_completed.strftime('%Y%m%d') if r.date_completed else '00000000' }}"
+          >
+            {{ r.date_completed.strftime('%b %d, %Y') if r.date_completed else
+            '—' }}
+          </td>
+          <td
+            class="days-cell"
+            data-sort="{{ r.processing_days if r.processing_days is not none else -1 }}"
+          >
+            {{ r.processing_days if r.processing_days is not none else '—' }}
+          </td>
+          <td class="remarks-cell">{{ r.remarks or '—' }}</td>
+          <td class="actions-cell">
+            <div class="overflow-menu">
+              <button
+                class="overflow-trigger"
+                title="Actions"
+                onclick="toggleMenu(this)"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
+                  width="16"
+                  height="16"
                   viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  fill="currentColor"
                 >
-                  <path
-                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                  />
-                  <path
-                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                  />
+                  <circle cx="12" cy="5" r="1.5" />
+                  <circle cx="12" cy="12" r="1.5" />
+                  <circle cx="12" cy="19" r="1.5" />
                 </svg>
-                Edit
-              </a>
-              <form
-                method="POST"
-                action="{{ url_for('ces_delete', record_id=r.id) }}"
-                onsubmit="return confirm('Delete record {{ r.code }}? This cannot be undone.');"
-              >
-                <button
-                  type="submit"
-                  class="overflow-item overflow-item--danger"
+              </button>
+              <div class="overflow-dropdown">
+                <a
+                  href="{{ url_for('ces_edit', record_id=r.id) }}"
+                  class="overflow-item"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -131,76 +294,333 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                   >
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                    <path d="M10 11v6M14 11v6" />
-                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                    <path
+                      d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                    />
+                    <path
+                      d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                    />
                   </svg>
-                  Delete
-                </button>
-              </form>
+                  Edit
+                </a>
+                <form
+                  method="POST"
+                  action="{{ url_for('ces_delete', record_id=r.id) }}"
+                  onsubmit="return confirm('Delete record {{ r.code }}? This cannot be undone.');"
+                >
+                  <button
+                    type="submit"
+                    class="overflow-item overflow-item--danger"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6M14 11v6" />
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                    </svg>
+                    Delete
+                  </button>
+                </form>
+              </div>
             </div>
-          </div>
-        </td>
-      </tr>
-      {% endfor %} {% else %}
-      <tr>
-        <td colspan="9" class="empty-row">
-          <div class="empty-state">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="40"
-              height="40"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <path d="M3 9h18M9 21V9" />
-            </svg>
-            <p>
-              No records yet. Click <strong>Add Record</strong> to get started.
-            </p>
-          </div>
-        </td>
-      </tr>
-      {% endif %}
-    </tbody>
-  </table>
+          </td>
+        </tr>
+        {% endfor %} {% else %}
+        <tr id="empty-row">
+          <td colspan="9" class="empty-row">
+            <div class="empty-state">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18M9 21V9" />
+              </svg>
+              <p>
+                No records yet. Click <strong>Add Record</strong> to get
+                started.
+              </p>
+            </div>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Footer: visible/total count ── -->
+  <div class="table-footer" id="table-footer">
+    <span id="footer-count"></span>
+  </div>
 </div>
+<!-- .ces-page -->
 
 <script>
+  /* ═══════════════════════════════════════════════════
+   1. SEARCH
+═══════════════════════════════════════════════════ */
+  const searchInput = document.getElementById("ces-search");
+  const searchClear = document.getElementById("search-clear");
+  const noResults = document.getElementById("no-results");
+  const noResultsTerm = document.getElementById("no-results-term");
+  const recordCount = document.getElementById("record-count");
+  const footerCount = document.getElementById("footer-count");
+  const tableFooter = document.getElementById("table-footer");
+
+  function getVisibleRows() {
+    return [
+      ...document.querySelectorAll("#ces-tbody tr:not(.empty-placeholder)"),
+    ];
+  }
+
+  function updateFooter() {
+    const all = getVisibleRows();
+    const total = all.length;
+    const visible = all.filter(
+      (r) => !r.classList.contains("row-hidden"),
+    ).length;
+    const q = searchInput.value.trim();
+
+    if (q) {
+      footerCount.textContent = `Showing ${visible} of ${total} record${total !== 1 ? "s" : ""}`;
+      tableFooter.style.display = "block";
+    } else {
+      tableFooter.style.display = "none";
+    }
+
+    recordCount.textContent = `${total} record${total !== 1 ? "s" : ""}`;
+  }
+
+  searchInput.addEventListener("input", () => {
+    const q = searchInput.value.trim().toLowerCase();
+    searchClear.style.display = q ? "flex" : "none";
+
+    let anyVisible = false;
+    getVisibleRows().forEach((row) => {
+      const text = row.textContent.toLowerCase();
+      const match = text.includes(q);
+      row.classList.toggle("row-hidden", !match);
+      if (match) anyVisible = true;
+    });
+
+    if (q && !anyVisible) {
+      noResultsTerm.textContent = `"${searchInput.value.trim()}"`;
+      noResults.style.display = "flex";
+    } else {
+      noResults.style.display = "none";
+    }
+    updateFooter();
+  });
+
+  searchClear.addEventListener("click", resetSearch);
+
+  function resetSearch() {
+    searchInput.value = "";
+    searchClear.style.display = "none";
+    noResults.style.display = "none";
+    getVisibleRows().forEach((r) => r.classList.remove("row-hidden"));
+    updateFooter();
+    searchInput.focus();
+  }
+
+  /* ═══════════════════════════════════════════════════
+   2. SORT
+═══════════════════════════════════════════════════ */
+  let currentSortCol = null;
+  let currentSortDir = "asc";
+
+  document.querySelectorAll("th.sortable").forEach((th) => {
+    th.addEventListener("click", () => {
+      const col = parseInt(th.dataset.col);
+      const type = th.dataset.type;
+
+      if (currentSortCol === col) {
+        currentSortDir = currentSortDir === "asc" ? "desc" : "asc";
+      } else {
+        currentSortCol = col;
+        currentSortDir = "asc";
+      }
+
+      // Update header indicators
+      document.querySelectorAll("th.sortable").forEach((h) => {
+        h.classList.remove("sort-asc", "sort-desc", "sort-active");
+        h.querySelector(".sort-indicator").textContent = "";
+      });
+      th.classList.add(
+        "sort-active",
+        currentSortDir === "asc" ? "sort-asc" : "sort-desc",
+      );
+      th.querySelector(".sort-indicator").textContent =
+        currentSortDir === "asc" ? "↑" : "↓";
+
+      sortTable(col, type, currentSortDir);
+    });
+  });
+
+  function sortTable(col, type, dir) {
+    const tbody = document.getElementById("ces-tbody");
+    const rows = [...tbody.querySelectorAll("tr:not(.empty-placeholder)")];
+
+    rows.sort((a, b) => {
+      const cellA = a.querySelectorAll("td")[col];
+      const cellB = b.querySelectorAll("td")[col];
+
+      let valA = (cellA.dataset.sort ?? cellA.textContent).trim();
+      let valB = (cellB.dataset.sort ?? cellB.textContent).trim();
+
+      if (type === "number") {
+        valA = parseFloat(valA) || -Infinity;
+        valB = parseFloat(valB) || -Infinity;
+        return dir === "asc" ? valA - valB : valB - valA;
+      }
+
+      // date / text: lexicographic on string (YYYYMMDD for dates, text otherwise)
+      valA = valA.toLowerCase();
+      valB = valB.toLowerCase();
+      if (valA < valB) return dir === "asc" ? -1 : 1;
+      if (valA > valB) return dir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    rows.forEach((r) => tbody.appendChild(r));
+  }
+
+  /* ═══════════════════════════════════════════════════
+   3. EXPORT
+═══════════════════════════════════════════════════ */
+  const exportTrigger = document.getElementById("export-trigger");
+  const exportDropdown = document.getElementById("export-dropdown");
+
+  exportTrigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    exportDropdown.classList.toggle("open");
+    exportTrigger.classList.toggle("active");
+  });
+  document.addEventListener("click", () => {
+    exportDropdown.classList.remove("open");
+    exportTrigger.classList.remove("active");
+  });
+  exportDropdown.addEventListener("click", (e) => e.stopPropagation());
+
+  function getTableData() {
+    const headers = [...document.querySelectorAll(".ces-table thead th")]
+      .slice(0, -1) // drop actions col
+      .map((th) => th.textContent.replace(/\s+/g, " ").trim());
+
+    const rows = [
+      ...document.querySelectorAll(
+        "#ces-tbody tr:not(.empty-placeholder):not(.row-hidden)",
+      ),
+    ];
+
+    return { headers, rows };
+  }
+
+  // CSV Export
+  document.getElementById("export-csv").addEventListener("click", () => {
+    const { headers, rows } = getTableData();
+    const escape = (v) => `"${v.replace(/"/g, '""')}"`;
+
+    const csvRows = [
+      headers.map(escape).join(","),
+      ...rows.map((row) =>
+        [...row.querySelectorAll("td")]
+          .slice(0, -1)
+          .map((td) => escape(td.textContent.replace(/\s+/g, " ").trim()))
+          .join(","),
+      ),
+    ];
+
+    downloadFile(csvRows.join("\n"), "text/csv", "ces-records.csv");
+    exportDropdown.classList.remove("open");
+    exportTrigger.classList.remove("active");
+  });
+
+  // JSON Export
+  document.getElementById("export-json").addEventListener("click", () => {
+    const { headers, rows } = getTableData();
+
+    const data = rows.map((row) => {
+      const obj = {};
+      [...row.querySelectorAll("td")].slice(0, -1).forEach((td, i) => {
+        const key = headers[i].toLowerCase().replace(/\s+/g, "_");
+        obj[key] = td.textContent.replace(/\s+/g, " ").trim();
+      });
+      return obj;
+    });
+
+    downloadFile(
+      JSON.stringify(data, null, 2),
+      "application/json",
+      "ces-records.json",
+    );
+    exportDropdown.classList.remove("open");
+    exportTrigger.classList.remove("active");
+  });
+
+  // Print / PDF
+  document.getElementById("export-print").addEventListener("click", () => {
+    window.print();
+    exportDropdown.classList.remove("open");
+    exportTrigger.classList.remove("active");
+  });
+
+  function downloadFile(content, mimeType, filename) {
+    const a = document.createElement("a");
+    a.href = `data:${mimeType};charset=utf-8,${encodeURIComponent(content)}`;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  /* ═══════════════════════════════════════════════════
+   4. THREE-DOT MENU (existing, unchanged)
+═══════════════════════════════════════════════════ */
   function toggleMenu(btn) {
     const menu = btn.closest(".overflow-menu");
     const dropdown = menu.querySelector(".overflow-dropdown");
-
     const rect = btn.getBoundingClientRect();
 
     dropdown.style.top = rect.bottom + "px";
     dropdown.style.left = rect.right - 130 + "px";
 
     const isOpen = menu.classList.contains("open");
-
-    // close all first
     document
       .querySelectorAll(".overflow-menu.open")
       .forEach((m) => m.classList.remove("open"));
-
     if (!isOpen) menu.classList.add("open");
   }
 
   document.addEventListener("click", (e) => {
-    const isTrigger = e.target.closest(".overflow-trigger");
-    const isDropdown = e.target.closest(".overflow-dropdown");
-
-    if (!isTrigger && !isDropdown) {
+    if (
+      !e.target.closest(".overflow-trigger") &&
+      !e.target.closest(".overflow-dropdown")
+    ) {
       document
         .querySelectorAll(".overflow-menu.open")
         .forEach((m) => m.classList.remove("open"));
     }
   });
+
+  // Init footer
+  updateFooter();
 </script>
 {% endblock %}
