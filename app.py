@@ -99,6 +99,10 @@ SECTIONS = [
     {"id": "ef",   "label": "EF",   "full": "Education Facilities"},
 ]
 
+
+
+
+
 # Map each section id to its stats-fetching function.
 # Add entries here as you build out other sections.
 SECTION_STATS_FN = {

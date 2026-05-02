@@ -151,20 +151,9 @@
       class="section-card card-color-{{ card_colors[loop.index0 % 6] }}"
     >
       <div class="section-card-icon">
-        {# ICON PLACEHOLDER – replace path with your actual section icon; keep
-        fill="currentColor" #}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          width="26"
-          height="26"
-          aria-hidden="true"
-        >
-          <path
-            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
-          />
-        </svg>
+        {% from "macros/icons.html" import section_icon %}
+
+        <div class="section-card-svg">{{ section_icon(section.id) }}</div>
       </div>
 
       <div class="section-card-body">

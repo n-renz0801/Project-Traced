@@ -456,3 +456,7 @@
     max-width: 100%;
   }
 }
+
+.section-card-svg {
+  transform: scale(0.6);
+}

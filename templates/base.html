@@ -62,6 +62,14 @@
     <!-- ===== PAGE CONTENT ===== -->
     <main>{% block content %}{% endblock %}</main>
 
+    <!-- ===== SHARED SECTION-PAGE SCRIPTS =====
+         Injected on any page that uses the standard toolbar + table layout.
+         Pages opt in by setting the `table_id` and `tbody_id` Jinja variables,
+         or by overriding the `extra_js` block entirely.
+    ===== -->
+    {% block section_js %} {# Default: no shared JS. Section pages that need it
+    override this block. #} {% endblock %} {% block extra_js %}{% endblock %}
+
     <script
       type="module"
       src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"
