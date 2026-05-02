@@ -93,7 +93,7 @@ SECTIONS = [
     {"id": "pr",   "label": "PR",   "full": "Planning and Research"},
     {"id": "hrd",  "label": "HRD",  "full": "Human Resource Development"},
     {"id": "yf",   "label": "YF",   "full": "Youth Formation"},
-    {"id": "smn",  "label": "SMN",  "full": "Social Mobilization and Network"},
+    {"id": "smn",  "label": "SMN",  "full": "Social Mobilization and Networking"},
     {"id": "shn",  "label": "SHN",  "full": "School Health and Nutrition"},
     {"id": "drrm", "label": "DRRM", "full": "Disaster Risk Reduction Management"},
     {"id": "ef",   "label": "EF",   "full": "Education Facilities"},
