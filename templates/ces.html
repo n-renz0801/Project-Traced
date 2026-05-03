@@ -8,9 +8,6 @@
       <h1 class="section-title">
         CES <span class="section-title-sub">— Chief Education Supervisor</span>
       </h1>
-      <p class="record-count" id="record-count">
-        {{ records|length }} record{{ 's' if records|length != 1 else '' }}
-      </p>
     </div>
 
     <div class="section-header__actions">
@@ -197,6 +194,36 @@
     </button>
   </div>
 
+  <!-- ── Summary bar ── -->
+  {% set total = records|length %} {% set days_list = records |
+  selectattr('processing_days', 'ne', none) | map(attribute='processing_days') |
+  list %} {% set over_limit = records | selectattr('processing_days', 'ne',
+  none) | selectattr('processing_days', 'gt', 3) | list | length %} {% set
+  avg_days = (days_list | sum / days_list | length) if days_list | length > 0
+  else none %}
+
+  <div class="summary-bar">
+    <div class="summary-stat summary-stat--blue">
+      <div class="summary-stat__label">Total transactions</div>
+      <div class="summary-stat__value">{{ total }}</div>
+    </div>
+    <div class="summary-stat summary-stat--teal">
+      <div class="summary-stat__label">Avg processing time</div>
+      <div class="summary-stat__value">
+        {{ '%.1f' | format(avg_days) ~ ' days' if avg_days is not none else '—'
+        }}
+      </div>
+    </div>
+    <div class="summary-stat summary-stat--amber">
+      <div class="summary-stat__label">Exceeding 3-day limit</div>
+      <div
+        class="summary-stat__value {% if over_limit > 0 %}summary-stat__value--warn{% endif %}"
+      >
+        {{ over_limit }}
+      </div>
+    </div>
+  </div>
+
   <!-- ── Table ── -->
   <div class="table-wrapper">
     <table class="ces-table" id="ces-table">
@@ -253,11 +280,12 @@
             '—' }}
           </td>
           <td
-            class="days-cell"
+            class="days-cell{% if r.processing_days is not none and r.processing_days > 3 %} over-limit{% endif %}"
             data-sort="{{ r.processing_days if r.processing_days is not none else -1 }}"
           >
             {{ r.processing_days if r.processing_days is not none else '—' }}
           </td>
+
           <td class="remarks-cell">{{ r.remarks or '—' }}</td>
           <td class="actions-cell">
             <div class="overflow-menu">
