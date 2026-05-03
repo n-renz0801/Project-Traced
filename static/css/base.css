@@ -141,8 +141,8 @@ nav ul li a.active::after {
 ═══════════════════════════════════════════════════════════════════════════ */
 main {
   flex: 1;
-  padding: 36px 48px;
-  max-width: 1400px;
+  padding: 36px 170px;
+  /* max-width: 1400px; */
   width: 100%;
   margin: 0 auto;
 }

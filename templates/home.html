@@ -56,104 +56,102 @@
   {% set total_records = sections | sum(attribute='record_count') %} {% set
   all_avgs = sections | selectattr('avg_processing_days') |
   map(attribute='avg_processing_days') | list %} {% set overall_avg = (all_avgs
-  | sum / all_avgs | length) | round(1) if all_avgs else none %}
+  | sum / all_avgs | length) | round(1) if all_avgs else none %} {% set top3 =
+  sections | sort(attribute='record_count', reverse=True) | list %} {% set
+  top_section = top3 | first %}
 
   <div class="stats-overview">
-    {# ── Left column: two stacked cards ── #}
-    <div class="stats-left">
-      {# ── Card 1: Total Transactions ── #}
-      <div class="stat-card stat-card--total">
-        <div class="stat-card-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            width="26"
-            height="26"
-            aria-hidden="true"
-          >
-            <path
-              d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0
-              0 0-2-2zm-7 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-4 9H7v-2h1v2zm0-4H7V9h1v2zm4
-              4h-2v-2h2v2zm0-4h-2V9h2v2zm4 4h-2v-2h2v2zm0-4h-2V9h2v2z"
-            />
-          </svg>
-        </div>
-        <div class="stat-card-body">
-          <span class="stat-value">{{ total_records }}</span>
-          <span class="stat-label">Total Transactions Processed</span>
-        </div>
+    {# ── Column 1: Total Transactions ── #}
+    <div class="stat-card stat-card--total">
+      <div class="stat-card-icon">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          width="26"
+          height="26"
+          aria-hidden="true"
+        >
+          <path
+            d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0
+            0 0-2-2zm-7 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-4 9H7v-2h1v2zm0-4H7V9h1v2zm4
+            4h-2v-2h2v2zm0-4h-2V9h2v2zm4 4h-2v-2h2v2zm0-4h-2V9h2v2z"
+          />
+        </svg>
       </div>
-
-      {# ── Card 2: Ave. Processing Days ── #}
-      <div class="stat-card stat-card--avg">
-        <div class="stat-card-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            width="26"
-            height="26"
-            aria-hidden="true"
-          >
-            <path
-              d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2
-              12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13a.5.5 0 0 0-1 0v5.25l3.496
-              2.1a.5.5 0 1 0 .508-.861L12.5 12.134V7z"
-            />
-          </svg>
-        </div>
-        <div class="stat-card-body">
-          <span class="stat-value"
-            >{{ overall_avg if overall_avg else '—' }}</span
-          >
-          <span class="stat-label">Average Processing Days</span>
-        </div>
+      <div class="stat-card-body">
+        <span class="stat-value">{{ total_records }}</span>
+        <span class="stat-label">Total Transactions Processed</span>
       </div>
     </div>
-    {# end .stats-left #} {# ── Right column: Highest Volume Section (tall card)
-    ── #} {% set top3 = sections | sort(attribute='record_count', reverse=True)
-    | list %} {% set top_section = top3 | first %}
+
+    {# ── Column 2: Ave. Processing Days ── #}
+    <div class="stat-card stat-card--avg">
+      <div class="stat-card-icon">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          width="26"
+          height="26"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2
+            12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13a.5.5 0 0 0-1 0v5.25l3.496
+            2.1a.5.5 0 1 0 .508-.861L12.5 12.134V7z"
+          />
+        </svg>
+      </div>
+      <div class="stat-card-body">
+        <span class="stat-value"
+          >{{ overall_avg if overall_avg else '—' }}</span
+        >
+        <span class="stat-label">Average Processing Days</span>
+      </div>
+    </div>
+
+    {# ── Column 3: Highest Volume Section + Top 3 bars ── #}
     <div class="stat-card stat-card--top">
-      {# ── Top section: icon left, content right ── #}
-      <div class="stat-card-main">
-        <div class="stat-card-icon stat-card-icon--gold">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            width="26"
-            height="26"
-            aria-hidden="true"
-          >
-            <path
-              d="M19 5h-2V3H7v2H5C3.9 5 3 5.9 3 7v1c0 2.55 1.92 4.63 4.39
-              4.94.63 1.5 1.98 2.63 3.61 2.96V18H9v2h6v-2h-2v-2.1c1.63-.33
-              2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5
-              8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"
-            />
-          </svg>
-        </div>
-        <div class="stat-card-body">
-          {# Two-column row: left = big number, right = badge stacked above full
-          name #}
-          <div class="stat-top-row1">
-            <span class="stat-value"
-              >{{ top_section.record_count if top_section else '—' }}</span
-            >
-            {% if top_section %}
-            <div class="stat-top-col2">
-              <span class="stat-section-badge">{{ top_section.label }}</span>
-              <span class="stat-section-full">{{ top_section.full }}</span>
-            </div>
-            {% endif %}
-          </div>
-          {# Card label #}
-          <span class="stat-label">Highest Volume Section</span>
-        </div>
+      {# Icon #}
+      <div class="stat-card-icon stat-card-icon--gold">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          width="26"
+          height="26"
+          aria-hidden="true"
+        >
+          <path
+            d="M19 5h-2V3H7v2H5C3.9 5 3 5.9 3 7v1c0 2.55 1.92 4.63 4.39
+            4.94.63 1.5 1.98 2.63 3.61 2.96V18H9v2h6v-2h-2v-2.1c1.63-.33
+            2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5
+            8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"
+          />
+        </svg>
       </div>
 
-      {# ── Bottom: mini bar chart top 3 ── #} {% if top3 %}
+      {# Highest Volume body #}
+      <div class="stat-card-body">
+        <div class="stat-top-row1">
+          <span class="stat-value"
+            >{{ top_section.record_count if top_section else '—' }}</span
+          >
+          {% if top_section %}
+          <div class="stat-top-col2">
+            <span class="stat-section-badge">{{ top_section.label }}</span>
+            <span class="stat-section-full">{{ top_section.full }}</span>
+          </div>
+          {% endif %}
+        </div>
+        <span class="stat-label">Highest Volume Section</span>
+      </div>
+
+      {# Vertical divider #}
+      <div class="stat-card-divider"></div>
+
+      {# Top 3 bars #} {% if top3 %}
       <div class="top3-bars">
         {% set max_count = top3[0].record_count %} {% for s in top3[:3] %} {%
         set pct = ((s.record_count / max_count) * 100) | round | int %}
@@ -178,25 +176,22 @@
   <h2 class="sections-heading">Sections</h2>
 
   <div class="sections-grid">
-    {% set card_colors = ['navy', 'gold', 'teal', 'blue', 'green', 'violet' ] %}
+    {% set card_colors = ['navy', 'gold', 'teal', 'blue', 'green', 'violet'] %}
     {% for section in sections %}
     <a
       href="{{ url_for(section.id) }}"
       class="section-card card-color-{{ card_colors[loop.index0 % 6] }}"
     >
-      <!-- ▼ NEW: icon + body share one row -->
       <div class="section-card-header">
-        <div class="section-card-icon">
+        <!-- <div class="section-card-icon">
           {% from "macros/icons.html" import section_icon %}
           <div class="section-card-svg">{{ section_icon(section.id) }}</div>
-        </div>
-
+        </div> -->
         <div class="section-card-body">
           <h3 class="section-label">{{ section.label }}</h3>
           <p class="section-full">{{ section.full }}</p>
         </div>
       </div>
-      <!-- ▲ END new wrapper -->
 
       <div class="section-card-stats">
         <div class="section-stat">
@@ -233,6 +228,48 @@
       </div>
     </a>
     {% endfor %}
+  </div>
+</div>
+
+<div class="feedback-banner">
+  <div class="feedback-banner-left">
+    <div class="feedback-qr">
+      <img
+        src="{{ url_for('static', filename='images/feedback-qr.png') }}"
+        alt="Feedback QR Code"
+      />
+      <span>Scan to give feedback</span>
+    </div>
+  </div>
+  <div class="feedback-banner-center">
+    <h3 class="feedback-title">Help us improve Project TRACED!</h3>
+    <p class="feedback-desc">
+      Your comments and suggestions matter. Share your experience using the
+      Tracking, Routing, Accountability, Control and Evaluation of Documents
+      system.
+    </p>
+    <a
+      href="https://depedph-my.sharepoint.com/:x:/g/personal/noel_merino_deped_gov_ph/IQCkM26r0fdNRLQC947ISuiaAfbQ84Pi4aerEJZsAfsn7tY?e=ucpKt5"
+      target="_blank"
+      class="feedback-btn"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z"
+        />
+      </svg>
+      Share Your Feedback
+    </a>
   </div>
 </div>
 
