@@ -1,0 +1,427 @@
+{% extends "base.html" %} {% block extra_css %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/feedback_log.css') }}"
+/>
+{% endblock %} {% block content %}
+
+<div class="log-page">
+  {# ── Page Header ── #}
+  <div class="log-header">
+    <div class="log-header-left">
+      <a
+        href="{{ url_for('home') }}"
+        class="log-back-btn"
+        title="Back to Dashboard"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+        Dashboard
+      </a>
+      <div>
+        <h1 class="log-title">Feedback Log</h1>
+        <p class="log-subtitle">
+          All user satisfaction responses for Project TRACED
+        </p>
+      </div>
+    </div>
+    <div class="log-header-right">
+      <div class="log-stat-pill log-stat-pill--blue">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+          />
+        </svg>
+        <span id="pill-avg"
+          >{{ "%.1f"|format(stats.avg_rating) if stats.avg_rating else "—"
+          }}</span
+        >
+        <span class="pill-label">avg</span>
+      </div>
+      <div class="log-stat-pill log-stat-pill--teal">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        <span id="pill-total">{{ stats.total_responses }}</span>
+        <span class="pill-label">responses</span>
+      </div>
+    </div>
+  </div>
+
+  {# ── Summary bar ── #}
+  <div class="log-summary">
+    {% for star in range(5, 0, -1) %} {% set cnt = stats.distribution.get(star,
+    0) %} {% set pct = ((cnt / stats.total_responses) * 100) | round | int if
+    stats.total_responses > 0 else 0 %}
+    <div class="summary-row">
+      <span class="summary-star-label">
+        {{ star }}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="11"
+          height="11"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+          />
+        </svg>
+      </span>
+      <div class="summary-track">
+        <div
+          class="summary-fill summary-fill--{{ star }}"
+          style="width: {{ pct }}%"
+          data-star="{{ star }}"
+        ></div>
+      </div>
+      <span class="summary-count" data-star-count="{{ star }}">{{ cnt }}</span>
+      <span class="summary-pct" data-star-pct="{{ star }}">{{ pct }}%</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── Toolbar ── #}
+  <div class="log-toolbar">
+    <div class="log-toolbar-left">
+      <div class="log-search-wrap">
+        <svg
+          class="log-search-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          type="text"
+          id="log-search"
+          class="log-search-input"
+          placeholder="Search by date, rating…"
+          autocomplete="off"
+        />
+      </div>
+      <div
+        class="log-filter-group"
+        id="star-filter-group"
+        role="group"
+        aria-label="Filter by star rating"
+      >
+        <button class="filter-btn filter-btn--active" data-filter="all">
+          All
+        </button>
+        {% for s in range(5, 0, -1) %}
+        <button class="filter-btn" data-filter="{{ s }}">{{ s }} ★</button>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="log-toolbar-right">
+      <span class="log-showing" id="log-showing"></span>
+      <button class="log-delete-selected-btn" id="delete-selected-btn" disabled>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14H6L5 6" />
+          <path d="M10 11v6M14 11v6" />
+          <path d="M9 6V4h6v2" />
+        </svg>
+        Delete Selected
+      </button>
+    </div>
+  </div>
+
+  {# ── Table ── #}
+  <div class="log-table-wrap">
+    <table class="log-table" id="log-table">
+      <thead>
+        <tr>
+          <th class="col-check">
+            <input
+              type="checkbox"
+              id="select-all"
+              title="Select all visible rows"
+            />
+          </th>
+          <th class="col-id sortable" data-col="id">
+            ID
+            <svg
+              class="sort-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 5v14M5 12l7-7 7 7" />
+            </svg>
+          </th>
+          <th class="col-rating sortable" data-col="rating">
+            Rating
+            <svg
+              class="sort-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 5v14M5 12l7-7 7 7" />
+            </svg>
+          </th>
+          <th class="col-stars">Stars</th>
+          <th class="col-date sortable" data-col="date">
+            Submitted At
+            <svg
+              class="sort-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 5v14M5 12l7-7 7 7" />
+            </svg>
+          </th>
+          <th class="col-sentiment">Sentiment</th>
+          <th class="col-actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="log-tbody">
+        {% for entry in entries %}
+        <tr
+          class="log-row"
+          data-id="{{ entry.id }}"
+          data-rating="{{ entry.rating }}"
+          data-date="{{ entry.submitted_at }}"
+        >
+          <td class="col-check">
+            <input type="checkbox" class="row-check" data-id="{{ entry.id }}" />
+          </td>
+          <td class="col-id">
+            <span class="entry-id">#{{ entry.id }}</span>
+          </td>
+          <td class="col-rating">
+            <span class="rating-badge rating-badge--{{ entry.rating }}"
+              >{{ entry.rating }}</span
+            >
+          </td>
+          <td class="col-stars">
+            <span
+              class="star-display"
+              aria-label="{{ entry.rating }} out of 5 stars"
+            >
+              {% for i in range(1, 6) %}
+              <svg
+                class="tbl-star {% if i <= entry.rating %}tbl-star--on{% endif %}"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                width="13"
+                height="13"
+              >
+                <path
+                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                />
+              </svg>
+              {% endfor %}
+            </span>
+          </td>
+          <td class="col-date">
+            <span class="date-primary"
+              >{{ entry.submitted_at.strftime('%b %d, %Y') }}</span
+            >
+            <span class="date-time"
+              >{{ (entry.submitted_at + timedelta(hours=8)).strftime('%I:%M %p')
+              }}</span
+            >
+          </td>
+          <td class="col-sentiment">
+            {% if entry.rating >= 4 %}
+            <span class="sentiment-pill sentiment-pill--positive"
+              >Positive</span
+            >
+            {% elif entry.rating == 3 %}
+            <span class="sentiment-pill sentiment-pill--neutral">Neutral</span>
+            {% else %}
+            <span class="sentiment-pill sentiment-pill--negative"
+              >Negative</span
+            >
+            {% endif %}
+          </td>
+          <td class="col-actions">
+            <button
+              class="delete-btn"
+              data-id="{{ entry.id }}"
+              title="Delete this entry"
+              aria-label="Delete entry #{{ entry.id }}"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6M14 11v6" />
+                <path d="M9 6V4h6v2" />
+              </svg>
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr class="log-empty-row" id="no-data-row">
+          <td colspan="7">
+            <div class="log-empty">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                opacity="0.3"
+              >
+                <path
+                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                />
+              </svg>
+              <p>No feedback responses yet.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {# Shown when filter/search yields no results #}
+    <div class="log-no-results" id="log-no-results" hidden>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="36"
+        height="36"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        opacity="0.3"
+      >
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+      <p>No entries match your filter.</p>
+    </div>
+  </div>
+</div>
+
+{# ── Delete Confirmation Modal ── #}
+<div
+  class="modal-overlay"
+  id="confirm-modal"
+  hidden
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-title"
+>
+  <div class="modal">
+    <div class="modal-icon modal-icon--danger">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6l-1 14H6L5 6" />
+        <path d="M10 11v6M14 11v6" />
+        <path d="M9 6V4h6v2" />
+      </svg>
+    </div>
+    <h2 class="modal-title" id="modal-title">Delete Entry?</h2>
+    <p class="modal-body" id="modal-body">This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn--cancel" id="modal-cancel">
+        Cancel
+      </button>
+      <button class="modal-btn modal-btn--confirm" id="modal-confirm">
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/feedback_log.js') }}"></script>
+{% endblock %}

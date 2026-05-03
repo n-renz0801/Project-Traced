@@ -73,9 +73,7 @@
           aria-hidden="true"
         >
           <path
-            d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0
-            0 0-2-2zm-7 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-4 9H7v-2h1v2zm0-4H7V9h1v2zm4
-            4h-2v-2h2v2zm0-4h-2V9h2v2zm4 4h-2v-2h2v2zm0-4h-2V9h2v2z"
+            d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-4 9H7v-2h1v2zm0-4H7V9h1v2zm4 4h-2v-2h2v2zm0-4h-2V9h2v2zm4 4h-2v-2h2v2zm0-4h-2V9h2v2z"
           />
         </svg>
       </div>
@@ -97,9 +95,7 @@
           aria-hidden="true"
         >
           <path
-            d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2
-            12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13a.5.5 0 0 0-1 0v5.25l3.496
-            2.1a.5.5 0 1 0 .508-.861L12.5 12.134V7z"
+            d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13a.5.5 0 0 0-1 0v5.25l3.496 2.1a.5.5 0 1 0 .508-.861L12.5 12.134V7z"
           />
         </svg>
       </div>
@@ -113,7 +109,6 @@
 
     {# ── Column 3: Highest Volume Section + Top 3 bars ── #}
     <div class="stat-card stat-card--top">
-      {# Icon #}
       <div class="stat-card-icon stat-card-icon--gold">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -124,15 +119,10 @@
           aria-hidden="true"
         >
           <path
-            d="M19 5h-2V3H7v2H5C3.9 5 3 5.9 3 7v1c0 2.55 1.92 4.63 4.39
-            4.94.63 1.5 1.98 2.63 3.61 2.96V18H9v2h6v-2h-2v-2.1c1.63-.33
-            2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5
-            8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"
+            d="M19 5h-2V3H7v2H5C3.9 5 3 5.9 3 7v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V18H9v2h6v-2h-2v-2.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"
           />
         </svg>
       </div>
-
-      {# Highest Volume body #}
       <div class="stat-card-body">
         <div class="stat-top-row1">
           <span class="stat-value"
@@ -147,11 +137,8 @@
         </div>
         <span class="stat-label">Highest Volume Section</span>
       </div>
-
-      {# Vertical divider #}
       <div class="stat-card-divider"></div>
-
-      {# Top 3 bars #} {% if top3 %}
+      {% if top3 %}
       <div class="top3-bars">
         {% set max_count = top3[0].record_count %} {% for s in top3[:3] %} {%
         set pct = ((s.record_count / max_count) * 100) | round | int %}
@@ -169,7 +156,85 @@
       </div>
       {% endif %}
     </div>
-    {# end .stat-card--top #}
+
+    {# ── Column 4: User Satisfaction Rating ── #}
+    <div
+      class="stat-card stat-card--satisfaction"
+      id="satisfaction-stat-card"
+      data-avg="{{ feedback_stats.avg_rating or 0 }}"
+      data-total="{{ feedback_stats.total_responses }}"
+      data-dist="{{ feedback_stats.distribution | tojson | e }}"
+    >
+      <div class="stat-card-body">
+        <div class="satisfaction-score-row">
+          <span class="stat-value satisfaction-avg" id="sat-avg-value">
+            {{ feedback_stats.avg_rating if feedback_stats.avg_rating else '—'
+            }}
+          </span>
+          <span class="satisfaction-out-of">/5</span>
+        </div>
+        <span class="stat-label">User Satisfaction Rating</span>
+        <div
+          class="satisfaction-mini-stars"
+          id="sat-mini-stars"
+          aria-label="Rating stars"
+        >
+          {% for i in range(1, 6) %}
+          <svg
+            class="mini-star {% if feedback_stats.avg_rating and i <= (feedback_stats.avg_rating | round) %}mini-star--filled{% endif %}"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            width="14"
+            height="14"
+          >
+            <path
+              d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+            />
+          </svg>
+          {% endfor %}
+        </div>
+        <!-- <span class="satisfaction-count" id="sat-count">
+          {{ feedback_stats.total_responses }} response{{ 's' if
+          feedback_stats.total_responses != 1 else '' }}
+        </span> -->
+      </div>
+      <!-- <div class="stat-card-divider"></div> -->
+      <!-- <div class="satisfaction-dist" id="sat-dist">
+        {% for star in range(5, 0, -1) %} {% set cnt =
+        feedback_stats.distribution.get(star, 0) %} {% set pct = ((cnt /
+        feedback_stats.total_responses) * 100) | round | int if
+        feedback_stats.total_responses > 0 else 0 %}
+        <div class="dist-row">
+          <span class="dist-label">{{ star }}</span>
+          <div class="dist-track">
+            <div class="dist-fill" style="width: {{ pct }}%"></div>
+          </div>
+          <span class="dist-count">{{ cnt }}</span>
+        </div>
+        {% endfor %}
+      </div> -->
+      <a
+        href="{{ url_for('feedback_log') }}"
+        class="stat-card-viewlog-link"
+        title="View all feedback responses"
+      >
+        View Log
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="11"
+          height="11"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </a>
+    </div>
   </div>
   {# end .stats-overview #}
 
@@ -183,16 +248,11 @@
       class="section-card card-color-{{ card_colors[loop.index0 % 6] }}"
     >
       <div class="section-card-header">
-        <!-- <div class="section-card-icon">
-          {% from "macros/icons.html" import section_icon %}
-          <div class="section-card-svg">{{ section_icon(section.id) }}</div>
-        </div> -->
         <div class="section-card-body">
           <h3 class="section-label">{{ section.label }}</h3>
           <p class="section-full">{{ section.full }}</p>
         </div>
       </div>
-
       <div class="section-card-stats">
         <div class="section-stat">
           <span class="section-stat-value">
@@ -210,7 +270,6 @@
           <span class="section-stat-label">Ave. Days</span>
         </div>
       </div>
-
       <div class="section-card-arrow">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -231,47 +290,100 @@
   </div>
 </div>
 
-<div class="feedback-banner">
-  <div class="feedback-banner-left">
-    <div class="feedback-qr">
-      <img
-        src="{{ url_for('static', filename='images/feedback-qr.png') }}"
-        alt="Feedback QR Code"
-      />
-      <span>Scan to give feedback</span>
-    </div>
-  </div>
-  <div class="feedback-banner-center">
-    <h3 class="feedback-title">Help us improve Project TRACED!</h3>
-    <p class="feedback-desc">
-      Your comments and suggestions matter. Share your experience using the
-      Tracking, Routing, Accountability, Control and Evaluation of Documents
-      system.
-    </p>
-    <a
-      href="https://depedph-my.sharepoint.com/:x:/g/personal/noel_merino_deped_gov_ph/IQCkM26r0fdNRLQC947ISuiaAfbQ84Pi4aerEJZsAfsn7tY?e=ucpKt5"
-      target="_blank"
-      class="feedback-btn"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+{# ── Feedback Rating Banner ─────────────────────────────────────────────────
+#}
+<div class="feedback-banner" id="feedback-banner">
+  <div class="feedback-banner-inner">
+    {# Center: question + stars #}
+    <div class="feedback-content" id="feedback-form-area">
+      <p class="feedback-eyebrow">Quick Feedback</p>
+      <h3 class="feedback-question">
+        How was your experience with Project TRACED today?
+      </h3>
+      <p class="feedback-subtext">
+        Your rating helps us improve document tracking for every school.
+      </p>
+
+      <div
+        class="star-rating-widget"
+        id="star-rating-widget"
+        role="group"
+        aria-label="Rate your experience from 1 to 5 stars"
       >
-        <path
-          d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z"
-        />
-      </svg>
-      Share Your Feedback
-    </a>
+        {% for i in range(1, 6) %}
+        <button
+          class="star-btn"
+          data-value="{{ i }}"
+          aria-label="{{ i }} star{{ 's' if i > 1 else '' }}"
+          title="{{ i }} star{{ 's' if i > 1 else '' }}"
+          type="button"
+        >
+          <svg
+            class="star-svg"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path
+              d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+            />
+          </svg>
+        </button>
+        {% endfor %}
+      </div>
+
+      <div class="star-label-row" id="star-label" aria-live="polite">
+        <span class="star-label-text">Tap a star to rate</span>
+      </div>
+
+      <button
+        class="feedback-submit-btn"
+        id="feedback-submit-btn"
+        disabled
+        type="button"
+      >
+        Submit Rating
+      </button>
+    </div>
+
+    {# Right: thank-you state (hidden until submit) #}
+    <div class="feedback-thankyou" id="feedback-thankyou" hidden>
+      <div class="thankyou-icon">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          width="36"
+          height="36"
+        >
+          <path d="M20 6L9 17l-5-5" />
+        </svg>
+      </div>
+      <h3 class="thankyou-title">Thank you!</h3>
+      <p class="thankyou-text">Your feedback has been recorded.</p>
+    </div>
+
+    {# Right: label/score summary #}
+    <div class="feedback-score-side">
+      <div class="score-circle" id="fb-score-circle">
+        <span class="score-number" id="fb-score-number">
+          {{ feedback_stats.avg_rating if feedback_stats.avg_rating else '—' }}
+        </span>
+        <span class="score-denom">/5</span>
+      </div>
+      <span class="score-label">Current Average</span>
+      <!-- <span class="score-responses" id="fb-score-responses">
+        {{ feedback_stats.total_responses }} response{{ 's' if
+        feedback_stats.total_responses != 1 else '' }}
+      </span> -->
+    </div>
   </div>
 </div>
 
 <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+<script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
 {% endblock %}

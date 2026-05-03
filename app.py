@@ -39,6 +39,21 @@ class CESRecord(db.Model):
         }
 
 
+class FeedbackRating(db.Model):
+    __tablename__ = 'feedback_ratings'
+
+    id           = db.Column(db.Integer, primary_key=True)
+    rating       = db.Column(db.Integer, nullable=False)          # 1–5
+    submitted_at = db.Column(db.DateTime, server_default=func.now(), nullable=False)
+
+    def to_dict(self):
+        return {
+            'id':           self.id,
+            'rating':       self.rating,
+            'submitted_at': self.submitted_at.isoformat(),
+        }
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def compute_processing_days(start: date, end: date) -> int:
@@ -83,6 +98,28 @@ def get_ces_stats() -> dict:
     }
 
 
+def get_feedback_stats() -> dict:
+    """Return overall feedback stats for the dashboard."""
+    total  = db.session.query(func.count(FeedbackRating.id)).scalar() or 0
+    avg    = db.session.query(func.avg(FeedbackRating.rating)).scalar()
+
+    # Distribution: count per star 1–5
+    dist_rows = (
+        db.session.query(FeedbackRating.rating, func.count(FeedbackRating.id))
+        .group_by(FeedbackRating.rating)
+        .all()
+    )
+    distribution = {i: 0 for i in range(1, 6)}
+    for rating, cnt in dist_rows:
+        distribution[rating] = cnt
+
+    return {
+        "total_responses": total,
+        "avg_rating":      round(float(avg), 1) if avg else None,
+        "distribution":    distribution,
+    }
+
+
 # ── Navigation ────────────────────────────────────────────────────────────────
 
 # Base section definitions — stats are injected at request time in home()
@@ -100,11 +137,7 @@ SECTIONS = [
 ]
 
 
-
-
-
 # Map each section id to its stats-fetching function.
-# Add entries here as you build out other sections.
 SECTION_STATS_FN = {
     "ces": get_ces_stats,
     # "eps": get_eps_stats,   ← add when EPS model/stats are ready
@@ -115,7 +148,7 @@ def sections_with_stats() -> list:
     """Return SECTIONS list with record_count and avg_processing_days injected."""
     result = []
     for section in SECTIONS:
-        s = dict(section)  # copy so we don't mutate the global
+        s = dict(section)
         fn = SECTION_STATS_FN.get(s["id"])
         if fn:
             s.update(fn())
@@ -130,7 +163,52 @@ def sections_with_stats() -> list:
 
 @app.route("/")
 def home():
-    return render_template("home.html", sections=sections_with_stats(), active="home")
+    feedback_stats = get_feedback_stats()
+    return render_template(
+        "home.html",
+        sections=sections_with_stats(),
+        active="home",
+        feedback_stats=feedback_stats,
+    )
+
+
+# ── Feedback API ──────────────────────────────────────────────────────────────
+
+@app.route("/api/feedback", methods=["POST"])
+def api_submit_feedback():
+    data   = request.get_json(silent=True) or {}
+    rating = data.get("rating")
+
+    if not isinstance(rating, int) or rating < 1 or rating > 5:
+        return jsonify({"error": "Rating must be an integer between 1 and 5."}), 400
+
+    entry = FeedbackRating(rating=rating)
+    db.session.add(entry)
+    db.session.commit()
+
+    stats = get_feedback_stats()
+    return jsonify({"success": True, "stats": stats}), 201
+
+
+@app.route("/api/feedback/stats")
+def api_feedback_stats():
+    return jsonify(get_feedback_stats())
+
+
+@app.route("/api/feedback/<int:entry_id>", methods=["DELETE"])
+def api_delete_feedback(entry_id):
+    entry = FeedbackRating.query.get_or_404(entry_id)
+    db.session.delete(entry)
+    db.session.commit()
+    return jsonify({"success": True, "deleted_id": entry_id})
+
+
+@app.route("/feedback-log")
+def feedback_log():
+    entries = FeedbackRating.query.order_by(FeedbackRating.submitted_at.desc()).all()
+    stats   = get_feedback_stats()
+    return render_template("feedback_log.html", entries=entries, stats=stats,
+                           active="feedback_log", timedelta=timedelta)
 
 
 # ── CES ──────────────────────────────────────────────────────────────────────
