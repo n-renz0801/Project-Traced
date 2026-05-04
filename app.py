@@ -15,15 +15,17 @@ db = SQLAlchemy(app)
 class Admin(db.Model):
     __tablename__ = 'admins'
 
-    id           = db.Column(db.Integer, primary_key=True)
-    username     = db.Column(db.String(100), unique=True, nullable=False)
-    password     = db.Column(db.String(255), nullable=False)
-    created_at   = db.Column(db.DateTime, server_default=func.now())
+    id         = db.Column(db.Integer, primary_key=True)
+    username   = db.Column(db.String(100), unique=True, nullable=False)
+    password   = db.Column(db.String(255), nullable=False)
+    role       = db.Column(db.String(20), default='admin')  # 'admin' or 'superadmin'
+    created_at = db.Column(db.DateTime, server_default=func.now())
 
     def to_dict(self):
         return {
             'id':         self.id,
             'username':   self.username,
+            'role':       self.role,
             'created_at': self.created_at.isoformat(),
         }
     
@@ -76,9 +78,10 @@ class FeedbackRating(db.Model):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def is_admin():
-    """Check if current session has active admin access."""
     return session.get('is_admin', False)
 
+def is_superadmin():
+    return session.get('is_admin', False) and session.get('admin_role') == 'superadmin'
 
 def compute_processing_days(start: date, end: date) -> int:
     """Count weekdays between start and end (inclusive) excluding PH holidays."""
@@ -208,7 +211,8 @@ def admin_login():
     if admin and check_password_hash(admin.password, password):
         session['is_admin']       = True
         session['admin_username'] = username
-        return jsonify({"success": True, "username": username})
+        session['admin_role']     = admin.role   # ← store role
+        return jsonify({"success": True, "username": username, "role": admin.role})
 
     return jsonify({"success": False, "error": "Invalid username or password."}), 401
 
@@ -223,8 +227,9 @@ def admin_logout():
 @app.route("/admin/status")
 def admin_status():
     return jsonify({
-        "is_admin": is_admin(),
-        "username": session.get('admin_username', None)
+        "is_admin":  is_admin(),
+        "username":  session.get('admin_username', None),
+        "role":      session.get('admin_role', None),   # ← add this
     })
 
 
@@ -245,17 +250,17 @@ def admin_add():
 
     data     = request.get_json(silent=True) or {}
     username = data.get("username", "").strip()
-    password = data.get("password", "")
 
-    if not username or not password:
-        return jsonify({"error": "Username and password are required."}), 400
+    if not username:
+        return jsonify({"error": "Username is required."}), 400
 
     if Admin.query.filter_by(username=username).first():
         return jsonify({"error": "Username already exists."}), 409
 
     new_admin = Admin(
         username = username,
-        password = generate_password_hash(password),
+        password = generate_password_hash("SGOD@urservice"),  # ← fixed password
+        role     = 'admin',                                    # ← always regular admin
     )
     db.session.add(new_admin)
     db.session.commit()
@@ -384,7 +389,7 @@ def ces_edit(record_id):
 
 @app.route("/ces/delete/<int:record_id>", methods=["POST"])
 def ces_delete(record_id):
-    if not is_admin():
+    if not is_superadmin():
         abort(403)
     record = CESRecord.query.get_or_404(record_id)
     db.session.delete(record)

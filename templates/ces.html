@@ -57,6 +57,7 @@
         </button>
       </div>
 
+      {% if session.get('is_admin') %}
       <!-- Export -->
       <div class="export-wrap" id="export-wrap">
         <button class="export-trigger" id="export-trigger" title="Export data">
@@ -152,7 +153,6 @@
       </div>
 
       <!-- Add Record -->
-      {% if session.get('is_admin') %}
       <a href="{{ url_for('ces_add') }}" class="btn-add">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -334,6 +334,7 @@
                   </svg>
                   Edit
                 </a>
+                {% if session.get('admin_role') == 'superadmin' %}
                 <form
                   method="POST"
                   action="{{ url_for('ces_delete', record_id=r.id) }}"
@@ -362,6 +363,7 @@
                     Delete
                   </button>
                 </form>
+                {% endif %}
               </div>
             </div>
           </td>

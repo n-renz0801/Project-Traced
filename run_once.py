@@ -1,11 +1,14 @@
+# run_once.py
 from app import app, db, Admin
 from werkzeug.security import generate_password_hash
 
 with app.app_context():
-    admin = Admin(
-        username = "renz",          # ← change this
-        password = generate_password_hash("Traced@SGOD")  # ← change this
+    db.create_all()
+    superadmin = Admin(
+        username = "renz_super",       # ← set your username
+        password = generate_password_hash("SGOD@urservice"),  # ← your own password
+        role     = "superadmin",
     )
-    db.session.add(admin)
+    db.session.add(superadmin)
     db.session.commit()
-    print("Done!")
+    print("Superadmin created!")
