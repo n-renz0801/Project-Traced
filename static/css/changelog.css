@@ -1,0 +1,163 @@
+.cl-page {
+  max-width: 720px;
+  padding: 0 0 4rem;
+}
+
+.cl-header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.cl-header h1 {
+  font-size: 1.6rem;
+  color: var(--navy-deep);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.cl-header p {
+  color: var(--text-light);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.cl-timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.cl-entry {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.cl-spine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 3px;
+}
+
+.cl-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cl-dot--blue {
+  background: #378add;
+}
+.cl-dot--green {
+  background: #639922;
+}
+.cl-dot--amber {
+  background: #ba7517;
+}
+.cl-dot--gray {
+  background: #888780;
+}
+
+.cl-line {
+  width: 1.5px;
+  flex: 1;
+  background: var(--border);
+  margin: 6px 0;
+  min-height: 24px;
+}
+
+.cl-body {
+  flex: 1;
+  padding-bottom: 2.5rem;
+}
+
+.cl-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.cl-date {
+  font-size: 0.78rem;
+  color: var(--text-light);
+}
+
+.cl-version {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.cl-version--blue {
+  background: #e6f1fb;
+  color: #0c447c;
+}
+.cl-version--green {
+  background: #eaf3de;
+  color: #27500a;
+}
+.cl-version--amber {
+  background: #faeeda;
+  color: #633806;
+}
+.cl-version--gray {
+  background: #f1efe8;
+  color: #444441;
+}
+
+.cl-title {
+  font-size: 0.97rem;
+  font-weight: 600;
+  color: var(--navy-deep);
+  margin: 0 0 0.6rem;
+}
+
+.cl-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cl-items li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: var(--text-light);
+  line-height: 1.55;
+}
+
+.cl-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cl-tag--feat {
+  background: #e6f1fb;
+  color: #185fa5;
+}
+.cl-tag--fix {
+  background: #eaf3de;
+  color: #3b6d11;
+}
+.cl-tag--imp {
+  background: #eeedfe;
+  color: #3c3489;
+}
+.cl-tag--sec {
+  background: #faeeda;
+  color: #854f0b;
+}

@@ -88,6 +88,16 @@
   color: var(--text-light);
   letter-spacing: 0.04em;
 }
+
+.org-name {
+  font-size: 0.82rem;
+  color: var(--navy);
+}
+.org-sgod {
+  font-size: 0.76rem;
+  color: var(--text);
+  font-weight: 500;
+}
 .dashboard-title {
   font-size: 2.7rem;
   color: var(--navy-deep);

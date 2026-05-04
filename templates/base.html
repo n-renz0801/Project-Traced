@@ -41,9 +41,13 @@
             <button onclick="openAdminModal()">Admin Login</button>
           </div>
 
-          <!-- If admin: show username + exit button -->
+          <!-- If admin: show username + changelog + exit -->
           <div id="admin-active-bar" style="display: none">
             <span>🟢 Admin: <strong id="admin-username-label"></strong></span>
+            <div class="admin-bar-divider"></div>
+            <a href="{{ url_for('changelog') }}" class="btn-changelog-admin">
+              Changelog
+            </a>
             <button onclick="exitAdminMode()">Exit Admin Mode</button>
           </div>
         </div>
@@ -103,7 +107,7 @@
 
         if (data.is_admin) {
           document.getElementById("admin-login-bar").style.display = "none";
-          document.getElementById("admin-active-bar").style.display = "block";
+          document.getElementById("admin-active-bar").style.display = "flex";
           document.getElementById("admin-username-label").textContent =
             data.username;
         } else {

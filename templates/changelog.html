@@ -1,0 +1,43 @@
+{% extends "base.html" %} {% block extra_css %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/changelog.css') }}"
+/>
+{% endblock %} {% block content %}
+<div class="cl-page">
+  <div class="cl-header">
+    <h1>Changelog</h1>
+    <p>Site updates and improvements — most recent first.</p>
+  </div>
+
+  <div class="cl-timeline">
+    {% for entry in changelog %}
+    <div class="cl-entry">
+      <div class="cl-spine">
+        <div class="cl-dot cl-dot--{{ entry.color }}"></div>
+        {% if not loop.last %}
+        <div class="cl-line"></div>
+        {% endif %}
+      </div>
+      <div class="cl-body">
+        <div class="cl-meta">
+          <span class="cl-date">{{ entry.date }}</span>
+          <span class="cl-version cl-version--{{ entry.color }}"
+            >{{ entry.version }}</span
+          >
+        </div>
+        <p class="cl-title">{{ entry.title }}</p>
+        <ul class="cl-items">
+          {% for item in entry.entries %}
+          <li>
+            <span class="cl-tag cl-tag--{{ item.tag }}">{{ item.tag }}</span>
+            {{ item.text }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

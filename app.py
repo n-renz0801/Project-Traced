@@ -163,6 +163,31 @@ SECTIONS = [
     {"id": "ef",   "label": "EF",   "full": "Education Facilities"},
 ]
 
+CHANGELOG = [
+    {
+        "version": "v1.3",
+        "date": "May 4, 2026",
+        "color": "blue",
+        "title": "Admin management & autofill fix",
+        "entries": [
+            {"tag": "fix",  "text": "Search inputs no longer filled by Chrome autofill"},
+            {"tag": "feat", "text": "Superadmin role — only superadmins can delete records"},
+            {"tag": "feat", "text": "Admin management page for adding/removing admins"},
+            {"tag": "feat", "text": "Changelog section for admins"},
+        ],
+    },
+    {
+        "version": "v1.0",
+        "date": "Mar 15, 2026",
+        "color": "gray",
+        "title": "Initial launch",
+        "entries": [
+            {"tag": "feat", "text": "Project TRACED launched with CES section"},
+            {"tag": "feat", "text": "Admin login & session management"},
+        ],
+    },
+]
+
 
 # Map each section id to its stats-fetching function.
 SECTION_STATS_FN = {
@@ -232,6 +257,11 @@ def admin_status():
         "role":      session.get('admin_role', None),   # ← add this
     })
 
+@app.route("/changelog")
+def changelog():
+    if not is_admin():
+        abort(403)
+    return render_template("changelog.html", changelog=CHANGELOG, sections=SECTIONS, active="changelog")
 
 # ── Admin Management Page ─────────────────────────────────────────────────────
 
