@@ -34,6 +34,19 @@
           src="{{ url_for('static', filename='images/project_traced.png') }}"
           alt="Project TRACED Logo"
         />
+        <!-- ── Admin Login Button (always visible) ── -->
+        <div id="admin-bar">
+          <!-- If NOT admin: show login button -->
+          <div id="admin-login-bar" style="display: none">
+            <button onclick="openAdminModal()">🔐 Admin Login</button>
+          </div>
+
+          <!-- If admin: show username + exit button -->
+          <div id="admin-active-bar" style="display: none">
+            <span>🟢 Admin: <strong id="admin-username-label"></strong></span>
+            <button onclick="exitAdminMode()">Exit Admin Mode</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -70,6 +83,71 @@
     {% block section_js %} {# Default: no shared JS. Section pages that need it
     override this block. #} {% endblock %} {% block extra_js %}{% endblock %}
 
+    <!-- ── Admin Login Modal ── -->
+    <div id="admin-modal" style="display: none">
+      <div class="modal-box">
+        <h3>Admin Login</h3>
+        <input type="text" id="admin-user-input" placeholder="Username" />
+        <input type="password" id="admin-pass-input" placeholder="Password" />
+        <p id="admin-login-error" style="color: red; display: none"></p>
+        <button onclick="submitAdminLogin()">Login</button>
+        <button onclick="closeAdminModal()">Cancel</button>
+      </div>
+    </div>
+
+    <script>
+      // Check admin status on page load
+      async function checkAdminStatus() {
+        const res = await fetch("/admin/status");
+        const data = await res.json();
+
+        if (data.is_admin) {
+          document.getElementById("admin-login-bar").style.display = "none";
+          document.getElementById("admin-active-bar").style.display = "block";
+          document.getElementById("admin-username-label").textContent =
+            data.username;
+        } else {
+          document.getElementById("admin-login-bar").style.display = "block";
+          document.getElementById("admin-active-bar").style.display = "none";
+        }
+      }
+
+      function openAdminModal() {
+        document.getElementById("admin-modal").style.display = "flex";
+      }
+      function closeAdminModal() {
+        document.getElementById("admin-modal").style.display = "none";
+      }
+
+      async function submitAdminLogin() {
+        const username = document.getElementById("admin-user-input").value;
+        const password = document.getElementById("admin-pass-input").value;
+
+        const res = await fetch("/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          closeAdminModal();
+          checkAdminStatus();
+          location.reload(); // reload to show admin controls
+        } else {
+          document.getElementById("admin-login-error").textContent = data.error;
+          document.getElementById("admin-login-error").style.display = "block";
+        }
+      }
+
+      async function exitAdminMode() {
+        await fetch("/admin/logout", { method: "POST" });
+        location.reload(); // reload to hide admin controls
+      }
+
+      // Run on every page load
+      checkAdminStatus();
+    </script>
     <script
       type="module"
       src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"

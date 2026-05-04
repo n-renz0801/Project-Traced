@@ -152,6 +152,7 @@
       </div>
 
       <!-- Add Record -->
+      {% if session.get('is_admin') %}
       <a href="{{ url_for('ces_add') }}" class="btn-add">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -169,6 +170,7 @@
         </svg>
         Add Record
       </a>
+      {% endif %}
     </div>
   </div>
 
@@ -287,6 +289,7 @@
           </td>
 
           <td class="remarks-cell">{{ r.remarks or '—' }}</td>
+          {% if session.get('is_admin') %}
           <td class="actions-cell">
             <div class="overflow-menu">
               <button
@@ -362,6 +365,7 @@
               </div>
             </div>
           </td>
+          {% endif %}
         </tr>
         {% endfor %} {% else %}
         <tr id="empty-row">

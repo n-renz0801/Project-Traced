@@ -1,14 +1,32 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, abort
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from datetime import date, timedelta
 import holidays
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://project_traced_user:IJx98IB2sDqKIcu7pCGFCGOxJGEHBCui@dpg-d7qel2jrjlhs73cie6a0-a.ohio-postgres.render.com/project_traced'
+app.config['SECRET_KEY'] = 'projectTRACEDkey123'  # change this!
 db = SQLAlchemy(app)
 
+# ── Admin Model ───────────────────────────────────────────────────────────────
+class Admin(db.Model):
+    __tablename__ = 'admins'
+
+    id           = db.Column(db.Integer, primary_key=True)
+    username     = db.Column(db.String(100), unique=True, nullable=False)
+    password     = db.Column(db.String(255), nullable=False)
+    created_at   = db.Column(db.DateTime, server_default=func.now())
+
+    def to_dict(self):
+        return {
+            'id':         self.id,
+            'username':   self.username,
+            'created_at': self.created_at.isoformat(),
+        }
+    
 
 # ── Models ────────────────────────────────────────────────────────────────────
 
@@ -52,9 +70,15 @@ class FeedbackRating(db.Model):
             'rating':       self.rating,
             'submitted_at': self.submitted_at.isoformat(),
         }
+    
+
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+def is_admin():
+    """Check if current session has active admin access."""
+    return session.get('is_admin', False)
+
 
 def compute_processing_days(start: date, end: date) -> int:
     """Count weekdays between start and end (inclusive) excluding PH holidays."""
@@ -171,6 +195,87 @@ def home():
         feedback_stats=feedback_stats,
     )
 
+# ── Admin Auth ────────────────────────────────────────────────────────────────
+
+@app.route("/admin/login", methods=["POST"])
+def admin_login():
+    data     = request.get_json(silent=True) or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+
+    admin = Admin.query.filter_by(username=username).first()
+
+    if admin and check_password_hash(admin.password, password):
+        session['is_admin']       = True
+        session['admin_username'] = username
+        return jsonify({"success": True, "username": username})
+
+    return jsonify({"success": False, "error": "Invalid username or password."}), 401
+
+
+@app.route("/admin/logout", methods=["POST"])
+def admin_logout():
+    session.pop('is_admin', None)
+    session.pop('admin_username', None)
+    return jsonify({"success": True})
+
+
+@app.route("/admin/status")
+def admin_status():
+    return jsonify({
+        "is_admin": is_admin(),
+        "username": session.get('admin_username', None)
+    })
+
+
+# ── Admin Management Page ─────────────────────────────────────────────────────
+
+@app.route("/admin/manage")
+def admin_manage():
+    if not is_admin():
+        return redirect(url_for("home"))  # block non-admins
+    admins = Admin.query.order_by(Admin.created_at).all()
+    return render_template("admin_manage.html", admins=admins, sections=SECTIONS)
+
+
+@app.route("/admin/add", methods=["POST"])
+def admin_add():
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data     = request.get_json(silent=True) or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+
+    if not username or not password:
+        return jsonify({"error": "Username and password are required."}), 400
+
+    if Admin.query.filter_by(username=username).first():
+        return jsonify({"error": "Username already exists."}), 409
+
+    new_admin = Admin(
+        username = username,
+        password = generate_password_hash(password),
+    )
+    db.session.add(new_admin)
+    db.session.commit()
+    return jsonify({"success": True, "admin": new_admin.to_dict()}), 201
+
+
+@app.route("/admin/remove/<int:admin_id>", methods=["POST"])
+def admin_remove(admin_id):
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 403
+
+    admin = Admin.query.get_or_404(admin_id)
+
+    # Prevent removing yourself
+    if admin.username == session.get('admin_username'):
+        return jsonify({"error": "You cannot remove yourself."}), 400
+
+    db.session.delete(admin)
+    db.session.commit()
+    return jsonify({"success": True})
 
 # ── Feedback API ──────────────────────────────────────────────────────────────
 
@@ -221,6 +326,8 @@ def ces():
 
 @app.route("/ces/add", methods=["GET", "POST"])
 def ces_add():
+    if not is_admin():
+        abort(403)
     if request.method == "POST":
         dr = request.form.get("date_received")
         dc = request.form.get("date_completed")
@@ -249,6 +356,9 @@ def ces_add():
 
 @app.route("/ces/edit/<int:record_id>", methods=["GET", "POST"])
 def ces_edit(record_id):
+    if not is_admin():
+        abort(403)
+
     record = CESRecord.query.get_or_404(record_id)
 
     if request.method == "POST":
@@ -274,6 +384,8 @@ def ces_edit(record_id):
 
 @app.route("/ces/delete/<int:record_id>", methods=["POST"])
 def ces_delete(record_id):
+    if not is_admin():
+        abort(403)
     record = CESRecord.query.get_or_404(record_id)
     db.session.delete(record)
     db.session.commit()

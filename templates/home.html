@@ -25,6 +25,7 @@
     </div>
     <div class="header-right">
       <div class="header-date" id="live-date"></div>
+      {% if session.get('is_admin') %}
       <button
         class="print-btn"
         onclick="window.print()"
@@ -49,6 +50,7 @@
         </svg>
         Print / Download
       </button>
+      {% endif %}
     </div>
   </div>
 
@@ -214,6 +216,7 @@
         </div>
         {% endfor %}
       </div> -->
+      {% if session.get('is_admin') %}
       <a
         href="{{ url_for('feedback_log') }}"
         class="stat-card-viewlog-link"
@@ -234,6 +237,7 @@
           <polyline points="9 18 15 12 9 6" />
         </svg>
       </a>
+      {% endif %}
     </div>
   </div>
   {# end .stats-overview #}
