@@ -170,13 +170,12 @@ CHANGELOG = [
         "color": "blue",
         "title": "Role-based access control & UI improvements",
         "entries": [
-            {"tag": "feat", "text": "Implemented admin role with restricted permissions (add, edit, print records)"},
             {"tag": "feat", "text": "Default users limited to view-only access"},
+            {"tag": "feat", "text": "Implemented admin role with additional controls over the site (add, edit, print records)"},
             {"tag": "feat", "text": "Added changelog section visible to admins for tracking site progress"},
             {"tag": "update", "text": "Renamed 'User Satisfaction Rating' to 'Customer Satisfaction Rating' on Home Page"},
-            {"tag": "update", "text": "Enhanced typography and layout for improved visibility of organization headers"},
+            {"tag": "update", "text": "Enhanced typography and layout for improved visibility of \"Schools Division Office of Antipolo City\" and \"School Governance and Operations Division (SGOD)\""},
             {"tag": "remove", "text": "Removed 'Delete' functionality to prevent accidental data loss"},
-            {"tag": "improve", "text": "Retained and emphasized 'Edit' functionality for safer data management"},
         ],
     },
     {
@@ -187,11 +186,10 @@ CHANGELOG = [
         "entries": [
             {"tag": "improve", "text": "Reduced size of dashboard statistics cards and section cards for better layout balance"},
             {"tag": "feat", "text": "Added print/download feature with automatic inclusion of print/download date"},
-            {"tag": "remove", "text": "Removed icons from section boxes on Home Page for cleaner UI"},
+            {"tag": "remove", "text": "Removed icons from section boxes on Home Page"},
             {"tag": "feat", "text": "Displayed average processing time alongside total transactions per section"},
             {"tag": "feat", "text": "Implemented visual alert: processing time turns red when exceeding 3-day limit"},
             {"tag": "validation", "text": "Made 'Date Received' field mandatory in 'Add New Record' form"},
-            {"tag": "improve", "text": "Clarified data entry workflow to ensure records are encoded upon document receipt"},
         ],
     },
     {
