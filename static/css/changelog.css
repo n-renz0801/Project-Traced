@@ -135,7 +135,9 @@
 }
 
 .cl-tag {
-  display: inline-block;
+  display: inline-flex; /* change this */
+  justify-content: center;
+  align-items: center;
   font-size: 0.68rem;
   font-weight: 600;
   padding: 1px 7px;
@@ -143,6 +145,7 @@
   flex-shrink: 0;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  width: 90px;
 }
 
 .cl-tag--feat {
@@ -160,4 +163,36 @@
 .cl-tag--sec {
   background: #faeeda;
   color: #854f0b;
+}
+
+/* ── Additional Tag Styles ───────────────────────────────────────── */
+
+/* UPDATE (changes / renaming / UI tweaks) */
+.cl-tag--update {
+  background: #e8f0ff;
+  color: #1e4ed8;
+}
+
+/* REMOVE (danger / destructive changes) */
+.cl-tag--remove {
+  background: #fdeaea;
+  color: #b42318;
+}
+
+/* VALIDATION (forms / rules / required fields) */
+.cl-tag--validation {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+/* IMPROVE (alias for improve / improvement) */
+.cl-tag--improve {
+  background: #eeedfe;
+  color: #3c3489;
+}
+
+/* OPTIONAL: if you want a more distinct warning style */
+.cl-tag--warn {
+  background: #fff4e5;
+  color: #b45309;
 }

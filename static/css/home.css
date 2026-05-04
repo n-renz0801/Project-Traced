@@ -69,35 +69,54 @@
   padding-bottom: 1.4rem;
   border-bottom: 1.5px solid var(--border);
 }
-.header-org {
+.masthead {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.masthead-org {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
-  margin-bottom: 0.55rem;
+  gap: 0.18rem;
+  flex-shrink: 0;
 }
+
 .org-name {
-  font-size: 0.72rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--navy);
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
+
 .org-sgod {
-  font-size: 0.7rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: var(--text-light);
   letter-spacing: 0.04em;
 }
 
-.org-name {
-  font-size: 0.82rem;
-  color: var(--navy);
+.traced-cdot {
+  color: var(--text-light);
+  font-weight: 800;
+  margin: 0 0.1em;
 }
-.org-sgod {
-  font-size: 0.76rem;
-  color: var(--text);
-  font-weight: 500;
+
+.masthead-divider {
+  width: 1.5px;
+  height: 80px;
+  background: var(--border);
+  flex-shrink: 0;
 }
+
+.masthead-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 .dashboard-title {
   font-size: 2.7rem;
   color: var(--navy-deep);
@@ -1095,6 +1114,16 @@
   .star-svg {
     width: 28px;
     height: 28px;
+  }
+  .masthead {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+  }
+
+  .masthead-divider {
+    width: 32px;
+    height: 1.5px;
   }
 }
 .stat-card-viewlog-link {

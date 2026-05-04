@@ -165,25 +165,42 @@ SECTIONS = [
 
 CHANGELOG = [
     {
-        "version": "v1.3",
+        "version": "v1.4",
         "date": "May 4, 2026",
         "color": "blue",
-        "title": "Admin management & autofill fix",
+        "title": "Role-based access control & UI improvements",
         "entries": [
-            {"tag": "fix",  "text": "Search inputs no longer filled by Chrome autofill"},
-            {"tag": "feat", "text": "Superadmin role — only superadmins can delete records"},
-            {"tag": "feat", "text": "Admin management page for adding/removing admins"},
-            {"tag": "feat", "text": "Changelog section for admins"},
+            {"tag": "feat", "text": "Implemented admin role with restricted permissions (add, edit, print records)"},
+            {"tag": "feat", "text": "Default users limited to view-only access"},
+            {"tag": "feat", "text": "Added changelog section visible to admins for tracking site progress"},
+            {"tag": "update", "text": "Renamed 'User Satisfaction Rating' to 'Customer Satisfaction Rating' on Home Page"},
+            {"tag": "update", "text": "Enhanced typography and layout for improved visibility of organization headers"},
+            {"tag": "remove", "text": "Removed 'Delete' functionality to prevent accidental data loss"},
+            {"tag": "improve", "text": "Retained and emphasized 'Edit' functionality for safer data management"},
+        ],
+    },
+    {
+        "version": "v1.3",
+        "date": "May 3, 2026",
+        "color": "gray",
+        "title": "Dashboard optimization & data visibility enhancements",
+        "entries": [
+            {"tag": "improve", "text": "Reduced size of dashboard statistics cards and section cards for better layout balance"},
+            {"tag": "feat", "text": "Added print/download feature with automatic inclusion of print/download date"},
+            {"tag": "remove", "text": "Removed icons from section boxes on Home Page for cleaner UI"},
+            {"tag": "feat", "text": "Displayed average processing time alongside total transactions per section"},
+            {"tag": "feat", "text": "Implemented visual alert: processing time turns red when exceeding 3-day limit"},
+            {"tag": "validation", "text": "Made 'Date Received' field mandatory in 'Add New Record' form"},
+            {"tag": "improve", "text": "Clarified data entry workflow to ensure records are encoded upon document receipt"},
         ],
     },
     {
         "version": "v1.0",
-        "date": "Mar 15, 2026",
+        "date": "May 2, 2026",
         "color": "gray",
         "title": "Initial launch",
         "entries": [
-            {"tag": "feat", "text": "Project TRACED launched with CES section"},
-            {"tag": "feat", "text": "Admin login & session management"},
+            {"tag": "feat", "text": "Project TRACED launched with CES module"}
         ],
     },
 ]
