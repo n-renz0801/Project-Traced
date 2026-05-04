@@ -33,7 +33,9 @@
           id="ces-search"
           class="search-input"
           placeholder="Search records…"
-          autocomplete="off"
+          autocomplete="new-password"
+          readonly
+          onfocus="this.removeAttribute('readonly')"
         />
         <button
           class="search-clear"
