@@ -1,25 +1,562 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/eps.css') }}" />
+{% endblock %} {% block content %}
+<div class="section-page">
+  <!-- ── Header ── -->
+  <div class="section-header">
+    <div class="section-header__text">
+      <h1 class="section-title">
+        EPS
+        <span class="section-title-sub">— Education Program Supervisor</span>
+      </h1>
+    </div>
 
-{% block content %}
-<h1>EPS — Education Program Supervisor</h1>
+    <div class="section-header__actions">
+      <!-- Search -->
+      <div class="search-wrap">
+        <svg
+          class="search-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          type="search"
+          id="eps-search"
+          class="search-input"
+          placeholder="Search records…"
+          autocomplete="new-password"
+          readonly
+          onfocus="this.removeAttribute('readonly')"
+        />
+        <button
+          class="search-clear"
+          id="search-clear"
+          title="Clear search"
+          style="display: none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
 
-<table>
-    <thead>
+      {% if session.get('is_admin') %}
+      <!-- Export -->
+      <div class="export-wrap" id="export-wrap">
+        <button class="export-trigger" id="export-trigger" title="Export data">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Export
+          <svg
+            class="export-chevron"
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <div class="export-dropdown" id="export-dropdown">
+          <button class="export-item" id="export-csv">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+              />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            Export CSV
+          </button>
+          <button class="export-item" id="export-print">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="6 9 6 2 18 2 18 9" />
+              <path
+                d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
+              />
+              <rect x="6" y="14" width="12" height="8" />
+            </svg>
+            Print / PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- Import -->
+      <div class="import-wrap" id="import-wrap">
+        <button class="import-trigger" id="import-trigger" title="Import CSV">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 5 17 10" />
+            <line x1="12" y1="5" x2="12" y2="15" />
+          </svg>
+          Import
+        </button>
+      </div>
+
+      <!-- Import Modal -->
+      <div
+        class="import-modal-overlay"
+        id="import-modal-overlay"
+        style="display: none"
+      >
+        <div class="import-modal">
+          <div class="import-modal__header">
+            <h3 class="import-modal__title">Import Records from CSV</h3>
+            <button
+              class="import-modal__close"
+              id="import-modal-close"
+              type="button"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="import-modal__body">
+            <div class="import-instructions">
+              <p>
+                Upload a <strong>.csv</strong> file with the following column
+                headers in order:
+              </p>
+              <div class="import-columns">
+                <span class="import-col-badge">Code</span>
+                <span class="import-col-badge">Process</span>
+                <span class="import-col-badge">Name of School</span>
+                <span class="import-col-badge">Date Received</span>
+                <span class="import-col-badge">Status</span>
+                <span class="import-col-badge">Date Completed / Forwarded</span>
+                <span class="import-col-badge">Processing Time (Days)</span>
+                <span class="import-col-badge">Remarks</span>
+              </div>
+              <p class="import-note">
+                Dates are in <code>YYYY-MM-DD</code> format. Processing Days may
+                be blank.
+              </p>
+            </div>
+            <label
+              class="import-dropzone"
+              id="import-dropzone"
+              for="import-file-input"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 5 17 10" />
+                <line x1="12" y1="5" x2="12" y2="15" />
+              </svg>
+              <span class="import-dropzone__text" id="import-dropzone-text"
+                >Click to choose a CSV file, or drag and drop here</span
+              >
+              <input
+                type="file"
+                id="import-file-input"
+                accept=".csv"
+                style="display: none"
+              />
+            </label>
+            <div
+              class="import-preview"
+              id="import-preview"
+              style="display: none"
+            >
+              <div class="import-preview__header">
+                <span
+                  class="import-preview__label"
+                  id="import-preview-label"
+                ></span>
+                <button
+                  class="import-preview__clear"
+                  id="import-preview-clear"
+                  type="button"
+                >
+                  Remove file
+                </button>
+              </div>
+              <div class="import-preview__scroll">
+                <table class="import-preview__table" id="import-preview-table">
+                  <thead id="import-preview-thead"></thead>
+                  <tbody id="import-preview-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div
+              class="import-error"
+              id="import-error"
+              style="display: none"
+            ></div>
+          </div>
+          <div class="import-modal__footer">
+            <button
+              class="import-btn-cancel"
+              id="import-btn-cancel"
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              class="import-btn-submit"
+              id="import-btn-submit"
+              type="button"
+              disabled
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 5 17 10" />
+                <line x1="12" y1="5" x2="12" y2="15" />
+              </svg>
+              Import Records
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Record -->
+      <a href="{{ url_for('eps_add') }}" class="btn-add">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add Record
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── No-results banner ── -->
+  <div class="no-results" id="no-results" style="display: none">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+    <p>No records match <strong id="no-results-term"></strong></p>
+    <button class="no-results-reset" onclick="resetSearch()">
+      Clear search
+    </button>
+  </div>
+
+  <!-- ── Summary bar ── -->
+  {% set total = records|length %} {% set days_list = records |
+  selectattr('processing_days', 'ne', none) | map(attribute='processing_days') |
+  list %} {% set over_limit = records | selectattr('processing_days', 'ne',
+  none) | selectattr('processing_days', 'gt', 3) | list | length %} {% set
+  avg_days = (days_list | sum / days_list | length) if days_list | length > 0
+  else none %}
+
+  <div class="summary-bar">
+    <div class="summary-stat summary-stat--blue">
+      <div class="summary-stat__label">Total transactions</div>
+      <div class="summary-stat__value">{{ total }}</div>
+    </div>
+    <div class="summary-stat summary-stat--teal">
+      <div class="summary-stat__label">Avg processing time</div>
+      <div class="summary-stat__value">
+        {{ '%.1f' | format(avg_days) ~ ' days' if avg_days is not none else '—'
+        }}
+      </div>
+    </div>
+    <div class="summary-stat summary-stat--amber">
+      <div class="summary-stat__label">Exceeding 3-day limit</div>
+      <div
+        class="summary-stat__value {% if over_limit > 0 %}summary-stat__value--warn{% endif %}"
+      >
+        {{ over_limit }}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Table ── -->
+  <div class="table-wrapper">
+    <table class="eps-table" id="eps-table">
+      <thead>
         <tr>
-            <th>Code</th>
-            <th>Process</th>
-            <th>Name of School</th>
-            <th>Date Received</th>
-            <th>Status</th>
-            <th>Date Completed / Forwarded</th>
-            <th>Processing Time (No. of Days)</th>
-            <th>Remarks</th>
+          <th class="sortable" data-col="0" data-type="text">
+            Code <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="1" data-type="text">
+            Process <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="2" data-type="text">
+            Name of<br />School <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="3" data-type="date">
+            Date<br />Received <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="4" data-type="text">
+            Status <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="5" data-type="date">
+            Date Completed /<br />Forwarded <span class="sort-indicator"></span>
+          </th>
+          <th class="sortable" data-col="6" data-type="number">
+            Processing<br />Time (Days) <span class="sort-indicator"></span>
+          </th>
+          <th>Remarks</th>
+          <th class="col-actions"></th>
         </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td colspan="8">No records yet.</td>
+      </thead>
+      <tbody id="eps-tbody">
+        {% if records %} {% for r in records %}
+        <tr data-id="{{ r.id }}">
+          <td><span class="code-badge">{{ r.code }}</span></td>
+          <td>{{ r.process }}</td>
+          <td>{{ r.school }}</td>
+          <td
+            data-sort="{{ r.date_received.strftime('%Y%m%d') if r.date_received else '00000000' }}"
+          >
+            {{ r.date_received.strftime('%b %d, %Y') if r.date_received else '—'
+            }}
+          </td>
+          <td>
+            <span
+              class="status-pill status-{{ r.status | lower | replace(' ', '-') | replace('/', '') }}"
+            >
+              {{ r.status }}
+            </span>
+          </td>
+          <td
+            data-sort="{{ r.date_completed.strftime('%Y%m%d') if r.date_completed else '00000000' }}"
+          >
+            {{ r.date_completed.strftime('%b %d, %Y') if r.date_completed else
+            '—' }}
+          </td>
+          <td
+            class="days-cell{% if r.processing_days is not none and r.processing_days > 3 %} over-limit{% endif %}"
+            data-sort="{{ r.processing_days if r.processing_days is not none else -1 }}"
+          >
+            {{ r.processing_days if r.processing_days is not none else '—' }}
+          </td>
+          <td class="remarks-cell">{{ r.remarks or '—' }}</td>
+          {% if session.get('is_admin') %}
+          <td class="actions-cell">
+            <div class="overflow-menu">
+              <button
+                class="overflow-trigger"
+                title="Actions"
+                onclick="toggleMenu(this)"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <circle cx="12" cy="5" r="1.5" />
+                  <circle cx="12" cy="12" r="1.5" />
+                  <circle cx="12" cy="19" r="1.5" />
+                </svg>
+              </button>
+              <div class="overflow-dropdown">
+                <a
+                  href="{{ url_for('eps_edit', record_id=r.id) }}"
+                  class="overflow-item"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                    />
+                    <path
+                      d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                    />
+                  </svg>
+                  Edit
+                </a>
+                {% if session.get('admin_role') == 'superadmin' %}
+                <form
+                  method="POST"
+                  action="{{ url_for('eps_delete', record_id=r.id) }}"
+                  onsubmit="return confirm('Delete record {{ r.code }}? This cannot be undone.');"
+                >
+                  <button
+                    type="submit"
+                    class="overflow-item overflow-item--danger"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6M14 11v6" />
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                    </svg>
+                    Delete
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          {% endif %}
         </tr>
-    </tbody>
-</table>
+        {% endfor %} {% else %}
+        <tr id="empty-row">
+          <td colspan="9" class="empty-row">
+            <div class="empty-state">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18M9 21V9" />
+              </svg>
+              <p>
+                No records yet. Click <strong>Add Record</strong> to get
+                started.
+              </p>
+            </div>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Footer ── -->
+  <div class="table-footer" id="table-footer">
+    <span id="footer-count"></span>
+  </div>
+</div>
+{% endblock %} {% block section_js %}
+<script src="{{ url_for('static', filename='js/eps.js') }}"></script>
 {% endblock %}

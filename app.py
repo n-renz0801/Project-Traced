@@ -74,6 +74,31 @@ class FeedbackRating(db.Model):
             'submitted_at': self.submitted_at.isoformat(),
         }
     
+class EPSRecord(db.Model):
+    __tablename__ = 'eps_records'
+
+    id               = db.Column(db.Integer, primary_key=True)
+    code             = db.Column(db.String(20), unique=True, nullable=False)
+    process          = db.Column(db.String(200), nullable=False)
+    school           = db.Column(db.String(200), nullable=False)
+    date_received    = db.Column(db.Date, nullable=True)
+    status           = db.Column(db.String(100), nullable=False)
+    date_completed   = db.Column(db.Date, nullable=True)
+    processing_days  = db.Column(db.Integer, nullable=True)
+    remarks          = db.Column(db.Text, nullable=True)
+
+    def to_dict(self):
+        return {
+            'id':              self.id,
+            'code':            self.code,
+            'process':         self.process,
+            'school':          self.school,
+            'date_received':   self.date_received.isoformat()  if self.date_received  else '',
+            'status':          self.status,
+            'date_completed':  self.date_completed.isoformat() if self.date_completed else '',
+            'processing_days': self.processing_days,
+            'remarks':         self.remarks or '',
+        }
 
 
 
@@ -148,6 +173,33 @@ def get_feedback_stats() -> dict:
     }
 
 
+def next_eps_code() -> str:
+    year = date.today().year
+    last = (
+        db.session.query(EPSRecord)
+        .filter(EPSRecord.code.like(f'EPS{year}__%'))
+        .order_by(EPSRecord.id.desc())
+        .first()
+    )
+    if last:
+        try:
+            num = int(last.code.split('__')[-1]) + 1
+        except ValueError:
+            num = 1
+    else:
+        num = 1
+    return f'EPS{year}__{num:02d}'
+
+
+def get_eps_stats() -> dict:
+    count = db.session.query(func.count(EPSRecord.id)).scalar() or 0
+    avg = db.session.query(func.avg(EPSRecord.processing_days)).scalar()
+    return {
+        "record_count": count,
+        "avg_processing_days": round(float(avg), 1) if avg is not None else None,
+    }
+
+
 # ── Navigation ────────────────────────────────────────────────────────────────
 
 # Base section definitions — stats are injected at request time in home()
@@ -208,7 +260,7 @@ CHANGELOG = [
 # Map each section id to its stats-fetching function.
 SECTION_STATS_FN = {
     "ces": get_ces_stats,
-    # "eps": get_eps_stats,   ← add when EPS model/stats are ready
+    "eps": get_eps_stats,
 }
 
 
@@ -523,11 +575,144 @@ def api_processing_days():
         return jsonify({"days": None})
 
 
-# ── Other section stubs ───────────────────────────────────────────────────────
-
 @app.route("/eps")
 def eps():
-    return render_template("eps.html", sections=SECTIONS, active="eps")
+    records = EPSRecord.query.order_by(EPSRecord.id).all()
+    return render_template("eps.html", sections=SECTIONS, active="eps", records=records)
+
+
+@app.route("/eps/add", methods=["GET", "POST"])
+def eps_add():
+    if not is_admin():
+        abort(403)
+    if request.method == "POST":
+        dr = request.form.get("date_received")
+        dc = request.form.get("date_completed")
+        date_received   = date.fromisoformat(dr) if dr else None
+        date_completed  = date.fromisoformat(dc) if dc else None
+        processing_days = compute_processing_days(date_received, date_completed) if date_received and date_completed else None
+
+        record = EPSRecord(
+            code            = next_eps_code(),
+            process         = request.form["process"],
+            school          = request.form["school"],
+            date_received   = date_received,
+            status          = request.form["status"],
+            date_completed  = date_completed,
+            processing_days = processing_days,
+            remarks         = request.form.get("remarks", ""),
+        )
+        db.session.add(record)
+        db.session.commit()
+        return redirect(url_for("eps"))
+
+    new_code = next_eps_code()
+    return render_template("eps_form.html", sections=SECTIONS, active="eps",
+                           mode="add", record=None, new_code=new_code)
+
+
+@app.route("/eps/edit/<int:record_id>", methods=["GET", "POST"])
+def eps_edit(record_id):
+    if not is_admin():
+        abort(403)
+
+    record = EPSRecord.query.get_or_404(record_id)
+
+    if request.method == "POST":
+        dr = request.form.get("date_received")
+        dc = request.form.get("date_completed")
+        date_received   = date.fromisoformat(dr) if dr else None
+        date_completed  = date.fromisoformat(dc) if dc else None
+        processing_days = compute_processing_days(date_received, date_completed) if date_received and date_completed else None
+
+        record.process         = request.form["process"]
+        record.school          = request.form["school"]
+        record.date_received   = date_received
+        record.status          = request.form["status"]
+        record.date_completed  = date_completed
+        record.processing_days = processing_days
+        record.remarks         = request.form.get("remarks", "")
+        db.session.commit()
+        return redirect(url_for("eps"))
+
+    return render_template("eps_form.html", sections=SECTIONS, active="eps",
+                           mode="edit", record=record, new_code=record.code)
+
+
+@app.route("/eps/delete/<int:record_id>", methods=["POST"])
+def eps_delete(record_id):
+    if not is_superadmin():
+        abort(403)
+    record = EPSRecord.query.get_or_404(record_id)
+    db.session.delete(record)
+    db.session.commit()
+    return redirect(url_for("eps"))
+
+
+@app.route("/eps/import", methods=["POST"])
+def eps_import():
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    data = request.get_json()
+    records = data.get("records", [])
+    if not records:
+        return jsonify({"success": False, "error": "No records provided."})
+
+    try:
+        def parse_date(val):
+            if not val or str(val).strip() in ("", "—", "None"):
+                return None
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%b %d, %Y", "%B %d, %Y"):
+                try:
+                    return datetime.strptime(str(val).strip(), fmt).date()
+                except ValueError:
+                    continue
+            return None
+
+        last = db.session.query(EPSRecord).order_by(EPSRecord.id.desc()).first()
+        if last and last.code:
+            try:
+                counter = int(last.code.split("__")[-1])
+            except ValueError:
+                counter = 0
+        else:
+            counter = 0
+
+        for r in records:
+            counter += 1
+            year = datetime.now().year
+            new_code = f"EPS{year}__{counter:02d}"
+
+            proc_days = None
+            if r.get("processing_days", "").strip() not in ("", "—"):
+                try:
+                    proc_days = int(float(r["processing_days"]))
+                except ValueError:
+                    pass
+
+            new_record = EPSRecord(
+                code=new_code,
+                process=r.get("process", ""),
+                school=r.get("school", ""),
+                date_received=parse_date(r.get("date_received")),
+                status=r.get("status", ""),
+                date_completed=parse_date(r.get("date_completed")),
+                processing_days=proc_days,
+                remarks=r.get("remarks", ""),
+            )
+            db.session.add(new_record)
+
+        db.session.commit()
+        return jsonify({"success": True})
+
+    except Exception as ex:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(ex)})
+    
+
+# ── Other section stubs ───────────────────────────────────────────────────────
+
 
 @app.route("/smme")
 def smme():
