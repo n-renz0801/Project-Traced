@@ -149,7 +149,8 @@ nav ul li a.active::after {
 ═══════════════════════════════════════════════════════════════════════════ */
 main {
   flex: 1;
-  padding: 36px 170px;
+  /* padding: 2rem clamp(4rem, 6.67vw, 15rem) 4rem; */
+  padding: 2rem clamp(3.5rem, 4.67vw, 15rem) 4rem;
   width: 100%;
   margin: 0 auto;
 }

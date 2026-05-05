@@ -74,13 +74,12 @@
   <div class="stats-overview">
     {# ── Column 1: Total Transactions ── #}
     <div class="stat-card stat-card--total">
-      <div class="stat-card-icon">
+      {# Ghost icon — absolute top-right #}
+      <div class="stat-card-icon" aria-hidden="true">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="currentColor"
-          width="26"
-          height="26"
           aria-hidden="true"
         >
           <path
@@ -90,19 +89,18 @@
       </div>
       <div class="stat-card-body">
         <span class="stat-value">{{ total_records }}</span>
+        <div class="stat-card-hdivider"></div>
         <span class="stat-label">Total Transactions Processed</span>
       </div>
     </div>
 
     {# ── Column 2: Ave. Processing Days ── #}
     <div class="stat-card stat-card--avg">
-      <div class="stat-card-icon">
+      <div class="stat-card-icon" aria-hidden="true">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="currentColor"
-          width="26"
-          height="26"
           aria-hidden="true"
         >
           <path
@@ -114,19 +112,19 @@
         <span class="stat-value"
           >{{ overall_avg if overall_avg else '—' }}</span
         >
+        <div class="stat-card-hdivider"></div>
         <span class="stat-label">Average Processing Days</span>
       </div>
     </div>
 
     {# ── Column 3: Highest Volume Section + Top 3 bars ── #}
     <div class="stat-card stat-card--top">
-      <div class="stat-card-icon stat-card-icon--gold">
+      {# Ghost icon — absolute top-right #}
+      <div class="stat-card-icon" aria-hidden="true">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="currentColor"
-          width="26"
-          height="26"
           aria-hidden="true"
         >
           <path
@@ -134,6 +132,8 @@
           />
         </svg>
       </div>
+
+      {# Left: body — big number + badge + label #}
       <div class="stat-card-body">
         <div class="stat-top-row1">
           <span class="stat-value"
@@ -146,10 +146,14 @@
           </div>
           {% endif %}
         </div>
+        <div class="stat-card-hdivider"></div>
         <span class="stat-label">Highest Volume Section</span>
       </div>
+
+      {# Divider #} {% if top3 %}
       <div class="stat-card-divider"></div>
-      {% if top3 %}
+
+      {# Right: top-3 bars #}
       <div class="top3-bars">
         {% set max_count = top3[0].record_count %} {% for s in top3[:3] %} {%
         set pct = ((s.record_count / max_count) * 100) | round | int %}
@@ -184,7 +188,6 @@
           </span>
           <span class="satisfaction-out-of">/5</span>
         </div>
-        <span class="stat-label">Customer Satisfaction Rating</span>
         <div
           class="satisfaction-mini-stars"
           id="sat-mini-stars"
@@ -205,26 +208,10 @@
           </svg>
           {% endfor %}
         </div>
-        <!-- <span class="satisfaction-count" id="sat-count">
-          {{ feedback_stats.total_responses }} response{{ 's' if
-          feedback_stats.total_responses != 1 else '' }}
-        </span> -->
+        <div class="stat-card-hdivider"></div>
+        <span class="stat-label">Customer Satisfaction Rating</span>
       </div>
-      <!-- <div class="stat-card-divider"></div> -->
-      <!-- <div class="satisfaction-dist" id="sat-dist">
-        {% for star in range(5, 0, -1) %} {% set cnt =
-        feedback_stats.distribution.get(star, 0) %} {% set pct = ((cnt /
-        feedback_stats.total_responses) * 100) | round | int if
-        feedback_stats.total_responses > 0 else 0 %}
-        <div class="dist-row">
-          <span class="dist-label">{{ star }}</span>
-          <div class="dist-track">
-            <div class="dist-fill" style="width: {{ pct }}%"></div>
-          </div>
-          <span class="dist-count">{{ cnt }}</span>
-        </div>
-        {% endfor %}
-      </div> -->
+
       {% if session.get('is_admin') %}
       <a
         href="{{ url_for('feedback_log') }}"
@@ -389,10 +376,6 @@
         <span class="score-denom">/5</span>
       </div>
       <span class="score-label">Current Average</span>
-      <!-- <span class="score-responses" id="fb-score-responses">
-        {{ feedback_stats.total_responses }} response{{ 's' if
-        feedback_stats.total_responses != 1 else '' }}
-      </span> -->
     </div>
   </div>
 </div>

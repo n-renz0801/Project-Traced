@@ -54,7 +54,7 @@
 
 /* ── Page Layout ─────────────────────────────────────────────────────────── */
 .dashboard-page {
-  padding: 0 2.5rem 4rem;
+  padding: 0 clamp(0.75rem, 4vw, 2.5rem) 4rem;
   max-width: 1500px;
   margin: 0 auto;
 }
@@ -172,28 +172,26 @@
   box-shadow: 0 3px 10px var(--shadow);
 }
 
-/* ── Stats Overview — 4 columns with intentional width ratios ────────────
-   Total  : 1.2fr  — compact, just the big number
-   Avg    : 1.2fr  — same compact treatment
-   Top    : 2.2fr  — wider to fit body + divider + bars side by side
-   Satisfy: 1.8fr  — needs room for score col + dist bars
-   ─────────────────────────────────────────────────────────────────────── */
+/* ── Stats Overview ──────────────────────────────────────────────────────── */
 .stats-overview {
   display: grid;
-  grid-template-columns: 1.1fr 1.1fr 2.5fr 1.1fr;
+  grid-template-columns:
+    minmax(175px, 1fr)
+    minmax(175px, 1fr)
+    3fr
+    minmax(175px, 0.65fr);
   align-items: stretch;
   gap: 0.85rem;
   margin-bottom: 2rem;
 }
 
-/* ── Stat card base ──────────────────────────────────────────────────────── */
+/* ── Stat card base — new dramatic layout ────────────────────────────────── */
 .stat-card {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 1.2rem;
+  flex-direction: column; /* column: value row → divider → label */
+  justify-content: space-between;
   border-radius: 16px;
-  padding: 1.2rem 1.6rem;
+  padding: 1.4rem 1.8rem;
   color: var(--white);
   box-shadow: 0 4px 20px var(--shadow);
   transition:
@@ -201,10 +199,34 @@
     box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
+  gap: 0;
+  min-height: 120px;
 }
 .stat-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 28px var(--shadow);
+}
+
+/* Ghost icon — absolute top-right, large and faint */
+.stat-card-icon {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.13);
+  pointer-events: none;
+  flex-shrink: 0;
+  /* scale up the icon for a more dramatic ghost effect */
+  transform: scale(1.6);
+  transform-origin: top right;
+}
+.stat-card-icon svg {
+  width: 32px;
+  height: 32px;
 }
 
 /* Decorative circles */
@@ -216,7 +238,7 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   pointer-events: none;
 }
 .stat-card::after {
@@ -227,7 +249,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   pointer-events: none;
 }
 
@@ -242,75 +264,109 @@
     var(--gold-deep) 100%
   );
 }
-
-/* Third card: horizontal row — icon | body | divider | top3-bars */
 .stat-card--top {
   background: linear-gradient(
     135deg,
     var(--navy-deep) 0%,
     var(--navy-dark) 100%
   );
-  flex-direction: row;
-  align-items: center;
-  gap: 1.2rem;
 }
-
-/* Fourth card: satisfaction */
 .stat-card--satisfaction {
   background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
-  flex-direction: row;
-  align-items: center;
-  gap: 1rem;
 }
 
-/* Icon box — rounded square */
-.stat-card-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.18);
-  color: var(--white);
-  flex-shrink: 0;
-}
-.stat-card-icon--gold {
-  background: rgba(253, 209, 22, 0.18);
-  color: var(--gold);
-}
-.stat-card-icon--teal {
-  background: rgba(255, 255, 255, 0.18);
-  color: rgba(252, 209, 22, 0.9);
-}
-
-/* Body: stacks value + label vertically */
+/* ── Stat card body — wraps the value + label block ─────────────────────── */
 .stat-card-body {
   display: flex;
   flex-direction: column;
-  gap: 0.18rem;
+  gap: 0;
   min-width: 0;
-  flex-shrink: 1; /* allow body to compress so label can wrap */
+  flex: 1;
+  /* Ensure body never clips its children */
+  overflow: visible;
 }
 
-/* Primary number */
+/* ── Top row: large primary number ──────────────────────────────────────── */
 .stat-value {
-  font-size: 2.4rem;
-  font-weight: 700;
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 800;
   color: var(--white);
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  /* give it room to breathe before the divider */
+  padding-bottom: 0.55rem;
+  /* no padding-right by default — only solo cards need ghost-icon clearance */
+  overflow: visible;
+  word-break: break-word;
 }
 
-/* Small all-caps label — wraps when card is narrow */
+/* Solo-value cards (total + avg): number fills the card alone, so add
+   right padding to prevent overlap with the ghost icon */
+.stat-card--total .stat-value,
+.stat-card--avg .stat-value {
+  padding-right: clamp(0.5rem, 4vw, 3.5rem);
+}
+
+/* ── Horizontal divider between value and label ──────────────────────────── */
+.stat-card-hdivider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.18);
+  margin-bottom: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ── Small all-caps label ────────────────────────────────────────────────── */
 .stat-label {
-  font-size: 0.63rem;
-  color: rgba(255, 255, 255, 0.75);
+  /* clamp keeps readability as card narrows, never hides text */
+  font-size: clamp(0.52rem, 0.9vw, 0.68rem);
+  color: rgba(255, 255, 255, 0.72);
   text-transform: uppercase;
-  letter-spacing: 0.09em;
-  font-weight: 600;
-  white-space: normal; /* allow wrapping */
-  line-height: 1.4;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  /* allow wrapping — this is the core fix for overflow */
+  white-space: normal;
+  line-height: 1.45;
+  overflow: visible;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* ── Vertical divider (used inside top-card between body and bars) ───────── */
+.stat-card-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+  margin: 0 0.4rem;
+}
+
+/* ── Top card — special horizontal layout: body | divider | bars ─────────── */
+.stat-card--top {
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  padding: 1.1rem 1.4rem;
+  min-height: 130px;
+}
+
+/* Left portion of top card (icon + body stacked) */
+.stat-card--top .stat-card-icon {
+  /* reset ghost positioning — not used in top card the same way */
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  transform: scale(1.6);
+  transform-origin: top right;
+}
+
+/* The body block inside top card */
+.stat-card--top .stat-card-body {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  width: auto;
+  min-width: 0;
+  max-width: 200px;
 }
 
 /* Two-column row: left = stat-value, right = badge stacked above full name */
@@ -318,7 +374,7 @@
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
 /* Right column inside stat-top-row1: badge on top, full name below */
@@ -327,17 +383,17 @@
   flex-direction: column;
   gap: 0.3rem;
   min-width: 0;
-  padding-top: 0.3rem;
+  padding-top: 0.25rem;
 }
 
 /* Section badge */
 .stat-section-badge {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   color: var(--navy-deep);
   background: var(--gold);
-  padding: 0.2em 0.65em;
+  padding: 0.2em 0.6em;
   border-radius: 6px;
   text-transform: uppercase;
   white-space: nowrap;
@@ -346,40 +402,39 @@
 
 /* Full section name */
 .stat-section-full {
-  font-size: 0.67rem;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.64rem;
+  color: rgba(255, 255, 255, 0.5);
   line-height: 1.35;
+  word-break: break-word;
+  hyphens: auto;
 }
 
-/* ── Vertical divider inside stat cards ─────────────────────────────────── */
-.stat-card-divider {
-  width: 1px;
-  align-self: stretch;
-  background: rgba(255, 255, 255, 0.15);
-  flex-shrink: 0;
-  margin: 0.25rem 0;
-}
-
-/* ── Top 3 bars ─────────────────────────────────────────────────────────── */
+/* ── Top 3 bars — flex: 1 so they always take remaining space ────────────── */
 .top3-bars {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.55rem;
   min-width: 0;
+  /* ensure bars never get squeezed to zero */
+  padding-left: 1rem;
+  overflow: visible;
 }
 .top3-row {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
+  /* prevent rows from collapsing */
+  min-height: 0;
 }
 .top3-name {
-  font-size: 0.62rem;
+  font-size: clamp(0.5rem, 0.75vw, 0.65rem);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.72);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -387,7 +442,7 @@
   flex-shrink: 0;
 }
 .top3-count {
-  font-size: 0.65rem;
+  font-size: clamp(0.5rem, 0.75vw, 0.68rem);
   font-weight: 700;
   color: var(--white);
   white-space: nowrap;
@@ -399,6 +454,7 @@
   background: rgba(255, 255, 255, 0.12);
   border-radius: 3px;
   overflow: hidden;
+  min-width: 20px; /* never collapse to nothing */
 }
 .bar-fill {
   height: 100%;
@@ -414,24 +470,33 @@
   background: rgba(252, 209, 22, 0.28);
 }
 
-/* ── Satisfaction card internals ─────────────────────────────────────────── */
+/* ── Satisfaction card — keep the score-row inside body ──────────────────── */
+.stat-card--satisfaction .stat-card-body {
+  justify-content: flex-start;
+}
+
 .satisfaction-score-row {
   display: flex;
   align-items: baseline;
   gap: 0.2rem;
+  padding-bottom: 0.55rem;
+}
+/* Override default stat-value padding inside score-row — siblings sit here */
+.stat-card--satisfaction .stat-value {
+  padding-bottom: 0;
 }
 .satisfaction-avg {
-  font-size: 2.6rem;
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
 }
 .satisfaction-out-of {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.5);
   font-weight: 600;
 }
 .satisfaction-mini-stars {
   display: flex;
   gap: 2px;
-  margin: 0.2rem 0 0.15rem;
+  margin: 0.25rem 0 0.2rem;
 }
 .mini-star {
   color: rgba(255, 255, 255, 0.2);
@@ -582,29 +647,47 @@
   padding: 0.55rem 0 0;
   border-top: 1px solid var(--card-border);
   margin-top: auto;
+  /* NEVER clip section stat values/labels */
+  overflow: visible;
+  min-height: 0;
+  flex-shrink: 0;
 }
 .section-stat {
   display: flex;
   flex-direction: column;
   gap: 0.08rem;
+  min-width: 0;
+  flex-shrink: 1;
+  /* Always visible — no clipping */
+  overflow: visible;
 }
 .section-stat-value {
-  font-size: 1.25rem;
+  /* clamp so it shrinks gracefully instead of overflowing */
+  font-size: clamp(0.85rem, 2.2vw, 1.25rem);
   font-weight: 700;
   color: var(--card-accent);
   line-height: 1;
+  overflow: visible;
+  word-break: break-word;
 }
 .section-stat-label {
-  font-size: 0.6rem;
+  /* clamp prevents single-word overflow hiding */
+  font-size: clamp(0.48rem, 0.8vw, 0.62rem);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   color: var(--text-light);
   font-weight: 600;
+  white-space: normal;
+  word-break: break-word;
+  hyphens: auto;
+  line-height: 1.35;
+  overflow: visible;
 }
 .section-stat-divider {
   width: 1px;
   height: 24px;
   background: var(--card-border);
+  flex-shrink: 0;
 }
 .section-card-arrow {
   position: absolute;
@@ -889,8 +972,25 @@
   letter-spacing: 0.07em;
 }
 
-.stat-card--top .stat-value {
-  font-size: 3rem;
+/* ── View log link ────────────────────────────────────────────────────────── */
+.stat-card-viewlog-link {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.15s ease;
+  z-index: 2;
+}
+.stat-card-viewlog-link:hover {
+  color: var(--gold);
 }
 
 /* ── Print ───────────────────────────────────────────────────────────────── */
@@ -928,19 +1028,16 @@
   .stat-card {
     padding: 0.55rem 0.85rem;
     border-radius: 8px;
-    gap: 0.55rem;
+    min-height: 80px;
   }
   .stat-value {
     font-size: 1.3rem;
-  }
-  .stat-card-icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 7px;
+    padding-right: 2rem;
+    padding-bottom: 0.3rem;
   }
   .stat-card-icon svg {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
   }
   .stat-label {
     font-size: 0.5rem;
@@ -1028,43 +1125,87 @@
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
-@media screen and (max-width: 1200px) {
-  .stats-overview {
-    grid-template-columns: 1.2fr 1.2fr 2.2fr;
-  }
-  .stat-card--satisfaction {
-    grid-column: 1 / -1;
-  }
-}
-@media screen and (max-width: 1024px) {
-  .stats-overview {
-    grid-template-columns: 1fr 1fr;
-  }
-  .stat-card--top,
-  .stat-card--satisfaction {
+
+/* ── Shared rule: top card always spans full width and sits on row 2 ──────── */
+@media screen and (max-width: 1240px) {
+  .stat-card--top {
+    order: 1;
     grid-column: 1 / -1;
   }
   .section-card {
     width: calc(33.333% - 0.85rem * 2 / 3);
   }
 }
+
+/* ── 1200px: 3 equal columns on row 1, top card full-width on row 2 ─────── */
+@media screen and (max-width: 1240px) {
+  .stats-overview {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  /* Top card has full width — keep horizontal body|divider|bars layout */
+  .stat-card--top {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: 130px;
+  }
+  .stat-card--top .stat-card-body {
+    max-width: 220px;
+  }
+  .stat-card--top .stat-card-divider {
+    display: block;
+  }
+  .top3-bars {
+    padding-left: 1rem;
+    padding-top: 0;
+    border-top: none;
+    width: auto;
+    display: flex;
+  }
+  .section-card {
+    width: calc(33.333% - 0.85rem * 2 / 3);
+  }
+}
+
+/* ── 1024px: 3 narrower columns on row 1 ───────────────────────────────── */
+@media screen and (max-width: 1024px) {
+  .stats-overview {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .stat-card--top .stat-card-body {
+    max-width: 200px;
+  }
+  .section-card {
+    width: calc(33.333% - 0.85rem * 2 / 3);
+  }
+}
+
+/* ── 820px: 3 columns still, top card switches to stacked layout ────────── */
 @media screen and (max-width: 820px) {
   .stats-overview {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
   }
-  .stat-card--top,
-  .stat-card--satisfaction {
-    grid-column: auto;
-    flex-wrap: wrap;
+  /* Top card now stacks body then bars vertically (it's full width already) */
+  .stat-card--top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    min-height: unset;
+    padding: 1.1rem 1.4rem;
   }
-  .top3-bars,
-  .satisfaction-dist {
-    flex-basis: 100%;
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
-    padding-top: 0.75rem;
+  .stat-card--top .stat-card-body {
+    max-width: 100%;
+    width: 100%;
   }
-  .stat-card-divider {
+  .stat-card--top .stat-card-divider {
     display: none;
+  }
+  .top3-bars {
+    padding-left: 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    width: 100%;
+    display: flex;
+    overflow: visible;
   }
   .section-card {
     width: calc(50% - 0.85rem / 2);
@@ -1089,9 +1230,15 @@
     display: none;
   }
 }
+
+/* ── 640px: 2 columns on row 1, top card still full-width on row 2 ──────── */
 @media screen and (max-width: 640px) {
   .dashboard-page {
-    padding: 1.5rem 1.2rem 3rem;
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+  }
+  .stats-overview {
+    grid-template-columns: 1fr 1fr 1fr;
   }
   .dashboard-header {
     flex-direction: column;
@@ -1120,27 +1267,8 @@
     align-items: flex-start;
     gap: 0.65rem;
   }
-
   .masthead-divider {
     width: 32px;
     height: 1.5px;
   }
-}
-.stat-card-viewlog-link {
-  position: absolute;
-  bottom: 0.75rem;
-  right: 0.85rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
-.stat-card-viewlog-link:hover {
-  color: var(--gold);
 }
