@@ -92,7 +92,53 @@
       <div class="modal-box">
         <h3>Admin Login</h3>
         <input type="text" id="admin-user-input" placeholder="Username" />
-        <input type="password" id="admin-pass-input" placeholder="Password" />
+        <div class="password-input-wrapper">
+          <input type="password" id="admin-pass-input" placeholder="Password" />
+          <button
+            type="button"
+            class="password-toggle-btn"
+            onclick="togglePasswordVisibility()"
+            aria-label="Toggle password visibility"
+            title="Show/hide password"
+          >
+            <svg
+              id="eye-icon-show"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <svg
+              id="eye-icon-hide"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="display: none"
+            >
+              <path
+                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+              />
+              <path
+                d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+              />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          </button>
+        </div>
         <p id="admin-login-error" style="color: red; display: none"></p>
         <button onclick="submitAdminLogin()">Login</button>
         <button onclick="closeAdminModal()">Cancel</button>
@@ -137,9 +183,18 @@
         if (data.success) {
           closeAdminModal();
           checkAdminStatus();
-          location.reload(); // reload to show admin controls
+          location.reload();
         } else {
-          document.getElementById("admin-login-error").textContent = data.error;
+          const enteredUsername = document
+            .getElementById("admin-user-input")
+            .value.trim();
+          document.getElementById("admin-login-error").innerHTML = `
+    <strong>Login failed.</strong><br>
+    The username <em>"${enteredUsername}"</em> was not found in the admin list,
+    or the password you entered is incorrect.<br><br>
+    Double-check your credentials. If you believe you should have access,
+    please contact your system administrator to have your account added.
+  `;
           document.getElementById("admin-login-error").style.display = "block";
         }
       }
@@ -147,6 +202,22 @@
       async function exitAdminMode() {
         await fetch("/admin/logout", { method: "POST" });
         location.reload(); // reload to hide admin controls
+      }
+
+      function togglePasswordVisibility() {
+        const input = document.getElementById("admin-pass-input");
+        const showIcon = document.getElementById("eye-icon-show");
+        const hideIcon = document.getElementById("eye-icon-hide");
+
+        if (input.type === "password") {
+          input.type = "text";
+          showIcon.style.display = "none";
+          hideIcon.style.display = "block";
+        } else {
+          input.type = "password";
+          showIcon.style.display = "block";
+          hideIcon.style.display = "none";
+        }
       }
 
       // Run on every page load
