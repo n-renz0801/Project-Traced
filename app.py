@@ -320,6 +320,7 @@ def admin_login():
 def admin_logout():
     session.pop('is_admin', None)
     session.pop('admin_username', None)
+    session.pop('admin_role', None)   # ← add this
     return jsonify({"success": True})
 
 

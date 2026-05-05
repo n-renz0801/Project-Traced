@@ -8,7 +8,9 @@
   class="section-page"
   data-section="{{ section_key }}"
   data-import-url="{{ url_for('section_import', section_key=section_key) }}"
+  {% if session.get('admin_role') == 'superadmin' %}
   data-bulk-delete-url="{{ url_for('section_bulk_delete', section_key=section_key) }}"
+  {% endif %}
 >
   <!-- ── Header ── -->
   <div class="section-header">
