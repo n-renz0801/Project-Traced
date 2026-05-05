@@ -3,6 +3,12 @@
   rel="stylesheet"
   href="{{ url_for('static', filename='css/changelog.css') }}"
 />
+{% endblock %} {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script
+  src="{{ url_for('static', filename='js/changelog-feedback.js') }}"
+  defer
+></script>
 {% endblock %} {% block content %}
 <div class="cl-page">
   <div class="cl-header">
@@ -13,12 +19,15 @@
   <div class="cl-timeline">
     {% for entry in changelog %}
     <div class="cl-entry">
+      <!-- Spine (dot + line) -->
       <div class="cl-spine">
         <div class="cl-dot cl-dot--{{ entry.color }}"></div>
         {% if not loop.last %}
         <div class="cl-line"></div>
         {% endif %}
       </div>
+
+      <!-- Two-column body -->
       <div class="cl-body">
         <div class="cl-meta">
           <span class="cl-date">{{ entry.date }}</span>
@@ -26,15 +35,80 @@
             >{{ entry.version }}</span
           >
         </div>
-        <p class="cl-title">{{ entry.title }}</p>
-        <ul class="cl-items">
-          {% for item in entry.entries %}
-          <li>
-            <span class="cl-tag cl-tag--{{ item.tag }}">{{ item.tag }}</span>
-            {{ item.text }}
-          </li>
-          {% endfor %}
-        </ul>
+
+        <div class="cl-columns">
+          <!-- Column 1: Changes -->
+          <div class="cl-col cl-col--changes">
+            <div class="cl-col-label">Changes</div>
+            <p class="cl-title">{{ entry.title }}</p>
+            <ul class="cl-items">
+              {% for item in entry.entries %}
+              <li>
+                <span class="cl-tag cl-tag--{{ item.tag }}"
+                  >{{ item.tag }}</span
+                >
+                {{ item.text }}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <!-- Column 2: Customer Feedback -->
+          <div
+            class="cl-col cl-col--feedback"
+            data-version="{{ entry.version }}"
+          >
+            <div class="cl-col-label">Customer feedback</div>
+
+            <div class="cl-feedback-panel">
+              <!-- Checklist area -->
+              <ul class="cl-checklist" id="checklist-{{ entry.version }}">
+                <!-- populated by JS from localStorage -->
+              </ul>
+
+              <!-- Add item manually -->
+              <div class="cl-add-row">
+                <input
+                  type="text"
+                  class="cl-add-input"
+                  placeholder="Add a feedback item…"
+                  data-version="{{ entry.version }}"
+                  aria-label="Add feedback item"
+                />
+                <button
+                  class="cl-add-btn"
+                  data-version="{{ entry.version }}"
+                  aria-label="Add item"
+                >
+                  +
+                </button>
+              </div>
+
+              <!-- Drop zone -->
+              <div
+                class="cl-dropzone"
+                data-version="{{ entry.version }}"
+                role="button"
+                tabindex="0"
+                aria-label="Drop a .docx file or click to upload"
+              >
+                <span class="cl-dropzone-icon"></span>
+                <span class="cl-dropzone-text"
+                  >Drop a <strong>.docx</strong> file here, or
+                  <u>browse</u></span
+                >
+                <input
+                  type="file"
+                  class="cl-file-input"
+                  accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  data-version="{{ entry.version }}"
+                  aria-hidden="true"
+                  tabindex="-1"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     {% endfor %}

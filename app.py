@@ -223,6 +223,7 @@ CHANGELOG = [
         "color": "blue",
         "title": "EPS module integration, data tools & UX refinements",
         "entries": [
+            {"tag": "feat", "text": "Introduced feedback module for collecting user comments, suggestions, and update requests with file upload support and automatic text extraction"},
             {"tag": "feat", "text": "Implemented full EPS page functionality, aligning behavior with CES module"},
             {"tag": "feat", "text": "Added data import capability to CES page"},
             {"tag": "feat", "text": "Extended CSV export functionality to Home Page"},
