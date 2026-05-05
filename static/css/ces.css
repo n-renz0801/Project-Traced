@@ -380,3 +380,10 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* Processing days — over limit highlight */
+td.over-limit {
+  color: #dc2626; /* red text for the value */
+  background-color: #fef2f2; /* subtle red background */
+  font-weight: 600;
+}

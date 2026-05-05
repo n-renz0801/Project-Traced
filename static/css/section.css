@@ -1,0 +1,6 @@
+/* Processing days — over limit highlight */
+td.over-limit {
+  color: #dc2626; /* red text for the value */
+  background-color: #fadcdc; /* subtle red background */
+  font-weight: 600;
+}

@@ -1366,3 +1366,10 @@
 .export-option + .export-option {
   border-top: 1px solid var(--border);
 }
+
+/* Processing days — over limit highlight */
+td.over-limit {
+  color: #dc2626; /* red text for the value */
+  background-color: #fef2f2; /* subtle red background */
+  font-weight: 600;
+}
