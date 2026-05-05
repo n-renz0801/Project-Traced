@@ -218,9 +218,26 @@ SECTIONS = [
 
 CHANGELOG = [
     {
+        "version": "v1.5",
+        "date": "May 5, 2026",
+        "color": "blue",
+        "title": "EPS module integration, data tools & UX refinements",
+        "entries": [
+            {"tag": "feat", "text": "Implemented full EPS page functionality, aligning behavior with CES module"},
+            {"tag": "feat", "text": "Added data import capability to CES page"},
+            {"tag": "feat", "text": "Extended CSV export functionality to Home Page"},
+            {"tag": "feat", "text": "Added password visibility toggle in login form"},
+            {"tag": "improve", "text": "Enhanced login error messaging"},
+            {"tag": "improve", "text": "Refined dashboard header layout for better visibility of SGOD and SDO Antipolo City"},
+            {"tag": "improve", "text": "Increased font size of dashboard statistical values for better readability"},
+            {"tag": "fix", "text": "Resolved layout inconsistencies in stats cards and section cards"},
+            {"tag": "improve", "text": "Enhanced visibility of 'Quick Feedback' section"},
+        ],
+    },
+    {
         "version": "v1.4",
         "date": "May 4, 2026",
-        "color": "blue",
+        "color": "gray",
         "title": "Role-based access control & UI improvements",
         "entries": [
             {"tag": "feat", "text": "Default users limited to view-only access"},
