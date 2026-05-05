@@ -1,12 +1,14 @@
 /**
  * changelog-feedback.js
  *
- * Handles the customer feedback column for each changelog entry:
- *  - Persist checklist items in localStorage keyed by entry version
- *  - Manual text input → checkbox item
- *  - .docx file drop/browse → mammoth extracts numbered list items → checkbox items
- *  - Checking an item records the date; line-through styling applied
- *  - Items can be removed with the × button
+ * Handles the customer feedback column for each changelog entry.
+ * All data is persisted via the Flask API → PostgreSQL database.
+ *
+ * API surface used:
+ *   GET    /api/changelog-feedback/:version          → load items
+ *   POST   /api/changelog-feedback/:version          → add item(s)
+ *   POST   /api/changelog-feedback/item/:id/check    → toggle checked
+ *   DELETE /api/changelog-feedback/item/:id          → remove item
  *
  * Requires: mammoth.browser.min.js loaded before this script
  */
@@ -14,30 +16,7 @@
 (function () {
   "use strict";
 
-  const STORAGE_PREFIX = "cl_feedback_";
-
   // ── Utilities ──────────────────────────────────────────────────
-
-  function storageKey(version) {
-    return STORAGE_PREFIX + version;
-  }
-
-  function loadItems(version) {
-    try {
-      const raw = localStorage.getItem(storageKey(version));
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function saveItems(version, items) {
-    try {
-      localStorage.setItem(storageKey(version), JSON.stringify(items));
-    } catch (e) {
-      console.warn("cl-feedback: could not save to localStorage", e);
-    }
-  }
 
   function formatDate(isoString) {
     if (!isoString) return "";
@@ -60,7 +39,7 @@
   }
 
   let toastTimer = null;
-  function showToast(msg) {
+  function showToast(msg, isError) {
     let toast = document.querySelector(".cl-toast");
     if (!toast) {
       toast = document.createElement("div");
@@ -68,20 +47,71 @@
       document.body.appendChild(toast);
     }
     toast.textContent = msg;
+    toast.style.background = isError ? "#b42318" : "#1a1a1a";
     toast.classList.add("is-visible");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2800);
   }
 
+  function setLoading(panel, loading) {
+    const btn = panel.querySelector(".cl-add-btn");
+    if (btn) btn.disabled = loading;
+  }
+
+  // ── API calls ──────────────────────────────────────────────────
+
+  async function apiGet(version) {
+    const res = await fetch(
+      "/api/changelog-feedback/" + encodeURIComponent(version),
+    );
+    if (!res.ok) throw new Error("Failed to load feedback items.");
+    return res.json();
+  }
+
+  async function apiAdd(version, texts) {
+    const res = await fetch(
+      "/api/changelog-feedback/" + encodeURIComponent(version),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texts }),
+      },
+    );
+    if (!res.ok) throw new Error("Failed to save item.");
+    return res.json();
+  }
+
+  async function apiCheck(itemId, checked) {
+    const res = await fetch(
+      "/api/changelog-feedback/item/" + itemId + "/check",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checked }),
+      },
+    );
+    if (!res.ok) throw new Error("Failed to update item.");
+    return res.json();
+  }
+
+  async function apiDelete(itemId) {
+    const res = await fetch("/api/changelog-feedback/item/" + itemId, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error("Failed to delete item.");
+    return res.json();
+  }
+
   // ── Render ─────────────────────────────────────────────────────
 
-  function renderChecklist(version) {
+  function renderChecklist(version, items) {
     const ul = document.getElementById("checklist-" + version);
     if (!ul) return;
-    const items = loadItems(version);
     ul.innerHTML = "";
 
-    items.forEach(function (item, idx) {
+    if (!items || items.length === 0) return;
+
+    items.forEach(function (item) {
       const li = document.createElement("li");
       if (item.checked) li.classList.add("is-checked");
 
@@ -90,118 +120,115 @@
       checkbox.checked = !!item.checked;
       checkbox.setAttribute("aria-label", item.text);
 
-      checkbox.addEventListener("change", function () {
-        const all = loadItems(version);
-        all[idx].checked = checkbox.checked;
-        all[idx].checkedAt = checkbox.checked ? new Date().toISOString() : null;
-        saveItems(version, all);
-        renderChecklist(version);
+      checkbox.addEventListener("change", async function () {
+        checkbox.disabled = true;
+        try {
+          const updated = await apiCheck(item.id, checkbox.checked);
+          item.checked = updated.checked;
+          item.checked_at = updated.checked_at;
+          li.classList.toggle("is-checked", updated.checked);
+
+          let dateSpan = li.querySelector(".cl-check-date");
+          if (updated.checked && updated.checked_at) {
+            if (!dateSpan) {
+              dateSpan = document.createElement("span");
+              dateSpan.className = "cl-check-date";
+              const removeBtn = li.querySelector(".cl-check-remove");
+              li.insertBefore(dateSpan, removeBtn);
+            }
+            dateSpan.textContent = "Done " + formatDate(updated.checked_at);
+          } else if (dateSpan) {
+            dateSpan.remove();
+          }
+        } catch (e) {
+          showToast("Could not update item.", true);
+          checkbox.checked = !checkbox.checked;
+        } finally {
+          checkbox.disabled = false;
+        }
       });
 
       const labelWrap = document.createElement("span");
       labelWrap.className = "cl-check-label";
-
       const textSpan = document.createElement("span");
       textSpan.className = "cl-check-text";
       textSpan.textContent = item.text;
       labelWrap.appendChild(textSpan);
+
+      li.appendChild(checkbox);
+      li.appendChild(labelWrap);
+
+      if (item.checked && item.checked_at) {
+        const dateSpan = document.createElement("span");
+        dateSpan.className = "cl-check-date";
+        dateSpan.textContent = "Done " + formatDate(item.checked_at);
+        li.appendChild(dateSpan);
+      }
 
       const removeBtn = document.createElement("button");
       removeBtn.className = "cl-check-remove";
       removeBtn.textContent = "×";
       removeBtn.title = "Remove";
       removeBtn.setAttribute("aria-label", "Remove item");
-      removeBtn.addEventListener("click", function (e) {
+      removeBtn.addEventListener("click", async function (e) {
         e.stopPropagation();
-        const all = loadItems(version);
-        all.splice(idx, 1);
-        saveItems(version, all);
-        renderChecklist(version);
+        removeBtn.disabled = true;
+        try {
+          await apiDelete(item.id);
+          li.remove();
+        } catch (err) {
+          showToast("Could not remove item.", true);
+          removeBtn.disabled = false;
+        }
       });
-
-      li.appendChild(checkbox);
-      li.appendChild(labelWrap);
-
-      if (item.checked && item.checkedAt) {
-        const dateSpan = document.createElement("span");
-        dateSpan.className = "cl-check-date";
-        dateSpan.textContent = "Done " + formatDate(item.checkedAt);
-        li.appendChild(dateSpan);
-      }
 
       li.appendChild(removeBtn);
       ul.appendChild(li);
     });
   }
 
-  // ── Add item ───────────────────────────────────────────────────
-
-  function addItem(version, text) {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    const items = loadItems(version);
-    items.push({ text: trimmed, checked: false, checkedAt: null });
-    saveItems(version, items);
-    renderChecklist(version);
-  }
-
-  function addItems(version, texts) {
-    const items = loadItems(version);
-    texts.forEach(function (t) {
-      const trimmed = t.trim();
-      if (trimmed)
-        items.push({ text: trimmed, checked: false, checkedAt: null });
-    });
-    saveItems(version, items);
-    renderChecklist(version);
-  }
-
   // ── Docx parsing via mammoth ───────────────────────────────────
 
-  /**
-   * mammoth converts .docx to HTML. We then parse list items from
-   * <ol> and <ul> elements (numbered lists become <ol> in mammoth output).
-   * Falls back to plain <p> lines if no lists are found.
-   */
-  function parseDocx(file, version) {
+  function parseDocx(file, version, panel) {
     if (typeof mammoth === "undefined") {
-      showToast("mammoth.js not loaded — cannot parse .docx");
+      showToast("mammoth.js not loaded — cannot parse .docx", true);
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = function (e) {
-      mammoth
-        .convertToHtml({ arrayBuffer: e.target.result })
-        .then(function (result) {
-          const html = result.value;
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, "text/html");
+    reader.onload = async function (e) {
+      try {
+        const result = await mammoth.convertToHtml({
+          arrayBuffer: e.target.result,
+        });
+        const html = result.value;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
 
-          const extracted = [];
+        const extracted = [];
+        const listItems = doc.querySelectorAll("ol li, ul li");
+        if (listItems.length > 0) {
+          listItems.forEach((li) => {
+            const t = li.textContent.trim();
+            if (t) extracted.push(t);
+          });
+        } else {
+          doc.querySelectorAll("p").forEach((p) => {
+            const t = p.textContent.trim();
+            if (t) extracted.push(t);
+          });
+        }
 
-          // Prefer list items (numbered or bulleted)
-          const listItems = doc.querySelectorAll("ol li, ul li");
-          if (listItems.length > 0) {
-            listItems.forEach(function (li) {
-              const t = li.textContent.trim();
-              if (t) extracted.push(t);
-            });
-          } else {
-            // Fallback: non-empty paragraphs
-            const paras = doc.querySelectorAll("p");
-            paras.forEach(function (p) {
-              const t = p.textContent.trim();
-              if (t) extracted.push(t);
-            });
-          }
+        if (extracted.length === 0) {
+          showToast("No text found in the document.");
+          return;
+        }
 
-          if (extracted.length === 0) {
-            showToast("No text found in the document.");
-            return;
-          }
-
-          addItems(version, extracted);
+        setLoading(panel, true);
+        try {
+          await apiAdd(version, extracted);
+          const allItems = await apiGet(version);
+          renderChecklist(version, allItems);
           showToast(
             extracted.length +
               " item" +
@@ -209,25 +236,35 @@
               " imported from " +
               file.name,
           );
-        })
-        .catch(function (err) {
-          console.error("mammoth error", err);
-          showToast("Could not read the .docx file.");
-        });
+        } catch (err) {
+          showToast("Failed to save imported items.", true);
+        } finally {
+          setLoading(panel, false);
+        }
+      } catch (err) {
+        console.error("mammoth error", err);
+        showToast("Could not read the .docx file.", true);
+      }
     };
     reader.readAsArrayBuffer(file);
   }
 
   // ── Wire up each feedback panel ────────────────────────────────
 
-  function initPanel(panel) {
+  async function initPanel(panel) {
     const version = panel.dataset.version;
     if (!version) return;
 
-    // Render persisted items
-    renderChecklist(version);
+    // Load items from server on page load
+    try {
+      const items = await apiGet(version);
+      renderChecklist(version, items);
+    } catch (e) {
+      // Silently skip if not admin (403) or network issue
+      console.warn("cl-feedback: could not load items for", version, e.message);
+    }
 
-    // Add button
+    // Add button + Enter key
     const addBtn = panel.querySelector(
       '.cl-add-btn[data-version="' + version + '"]',
     );
@@ -236,17 +273,26 @@
     );
 
     if (addBtn && addInput) {
-      addBtn.addEventListener("click", function () {
-        addItem(version, addInput.value);
-        addInput.value = "";
-        addInput.focus();
-      });
-
-      addInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") {
-          addItem(version, addInput.value);
+      async function handleAdd() {
+        const text = addInput.value.trim();
+        if (!text) return;
+        addBtn.disabled = true;
+        try {
+          await apiAdd(version, [text]);
           addInput.value = "";
+          const items = await apiGet(version);
+          renderChecklist(version, items);
+        } catch (err) {
+          showToast("Could not save item.", true);
+        } finally {
+          addBtn.disabled = false;
+          addInput.focus();
         }
+      }
+
+      addBtn.addEventListener("click", handleAdd);
+      addInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") handleAdd();
       });
     }
 
@@ -259,38 +305,27 @@
     );
 
     if (dropzone && fileInput) {
-      // Click on drop zone text triggers file picker
       dropzone.addEventListener("click", function (e) {
-        // The hidden file input overlays the zone; let it bubble naturally.
-        // But if the click reached the zone itself (not the file input), trigger it.
-        if (e.target !== fileInput) {
-          fileInput.click();
-        }
+        if (e.target !== fileInput) fileInput.click();
       });
-
       dropzone.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           fileInput.click();
         }
       });
-
       fileInput.addEventListener("change", function () {
         const file = fileInput.files[0];
-        if (file) parseDocx(file, version);
-        fileInput.value = ""; // reset so same file can be re-uploaded
+        if (file) parseDocx(file, version, panel);
+        fileInput.value = "";
       });
-
-      // Drag-and-drop
       dropzone.addEventListener("dragover", function (e) {
         e.preventDefault();
         dropzone.classList.add("is-over");
       });
-
       dropzone.addEventListener("dragleave", function () {
         dropzone.classList.remove("is-over");
       });
-
       dropzone.addEventListener("drop", function (e) {
         e.preventDefault();
         dropzone.classList.remove("is-over");
@@ -300,7 +335,7 @@
           showToast("Please drop a .docx file.");
           return;
         }
-        parseDocx(file, version);
+        parseDocx(file, version, panel);
       });
     }
   }

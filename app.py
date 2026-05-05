@@ -99,6 +99,30 @@ class EPSRecord(db.Model):
             'processing_days': self.processing_days,
             'remarks':         self.remarks or '',
         }
+    
+
+# ── Changelog Feedback Model ──────────────────────────────────────────────────
+# Add this class alongside your other models (Admin, CESRecord, etc.)
+ 
+class ChangelogFeedback(db.Model):
+    __tablename__ = 'changelog_feedback'
+ 
+    id          = db.Column(db.Integer, primary_key=True)
+    version     = db.Column(db.String(20), nullable=False, index=True)  # e.g. "v1.5"
+    text        = db.Column(db.Text, nullable=False)
+    checked     = db.Column(db.Boolean, default=False, nullable=False)
+    checked_at  = db.Column(db.DateTime, nullable=True)
+    created_at  = db.Column(db.DateTime, server_default=func.now(), nullable=False)
+ 
+    def to_dict(self):
+        return {
+            'id':         self.id,
+            'version':    self.version,
+            'text':       self.text,
+            'checked':    self.checked,
+            'checked_at': self.checked_at.isoformat() if self.checked_at else None,
+            'created_at': self.created_at.isoformat(),
+        }
 
 
 
@@ -764,6 +788,71 @@ def drrm():
 def ef():
     return render_template("ef.html", sections=SECTIONS, active="ef")
 
+
+# ── Changelog Feedback API Routes ─────────────────────────────────────────────
+# Add these routes alongside your other @app.route definitions
+ 
+@app.route("/api/changelog-feedback/<version>", methods=["GET"])
+def api_feedback_get(version):
+    """Return all feedback items for a given changelog version."""
+    if not is_admin():
+        abort(403)
+    items = (
+        ChangelogFeedback.query
+        .filter_by(version=version)
+        .order_by(ChangelogFeedback.created_at)
+        .all()
+    )
+    return jsonify([item.to_dict() for item in items])
+ 
+ 
+@app.route("/api/changelog-feedback/<version>", methods=["POST"])
+def api_feedback_add(version):
+    """Add one or more feedback items for a changelog version."""
+    if not is_admin():
+        abort(403)
+    data = request.get_json(silent=True) or {}
+ 
+    # Accepts either { "text": "single item" } or { "texts": ["item1", "item2"] }
+    texts = data.get("texts") or ([data["text"]] if data.get("text") else [])
+    if not texts:
+        return jsonify({"error": "No text provided."}), 400
+ 
+    created = []
+    for t in texts:
+        t = t.strip()
+        if not t:
+            continue
+        item = ChangelogFeedback(version=version, text=t)
+        db.session.add(item)
+        created.append(item)
+ 
+    db.session.commit()
+    return jsonify([item.to_dict() for item in created]), 201
+ 
+ 
+@app.route("/api/changelog-feedback/item/<int:item_id>/check", methods=["POST"])
+def api_feedback_check(item_id):
+    """Toggle the checked state of a feedback item."""
+    if not is_admin():
+        abort(403)
+    item = ChangelogFeedback.query.get_or_404(item_id)
+    data = request.get_json(silent=True) or {}
+    item.checked    = data.get("checked", not item.checked)
+    item.checked_at = datetime.utcnow() if item.checked else None
+    db.session.commit()
+    return jsonify(item.to_dict())
+ 
+ 
+@app.route("/api/changelog-feedback/item/<int:item_id>", methods=["DELETE"])
+def api_feedback_delete(item_id):
+    """Delete a feedback item."""
+    if not is_admin():
+        abort(403)
+    item = ChangelogFeedback.query.get_or_404(item_id)
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({"success": True, "deleted_id": item_id})
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
