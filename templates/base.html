@@ -45,9 +45,12 @@
           <div id="admin-active-bar" style="display: none">
             <span>🟢 Admin: <strong id="admin-username-label"></strong></span>
             <div class="admin-bar-divider"></div>
+            {% if session.get('admin_role') == 'superadmin' or
+            session.get('admin_username') == 'Jho' %}
             <a href="{{ url_for('changelog') }}" class="btn-changelog-admin">
               Changelog
             </a>
+            {% endif %}
             <button onclick="exitAdminMode()">Exit Admin Mode</button>
           </div>
         </div>
