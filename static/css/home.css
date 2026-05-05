@@ -288,7 +288,7 @@
 
 /* ── Top row: large primary number ──────────────────────────────────────── */
 .stat-value {
-  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-size: 3.7rem;
   font-weight: 800;
   color: var(--white);
   line-height: 1;
@@ -319,7 +319,7 @@
 /* ── Small all-caps label ────────────────────────────────────────────────── */
 .stat-label {
   /* clamp keeps readability as card narrows, never hides text */
-  font-size: clamp(0.52rem, 0.9vw, 0.68rem);
+  font-size: clamp(0.6rem, 0.9vw, 0.7rem);
   color: rgba(255, 255, 255, 0.72);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -771,7 +771,7 @@
 }
 
 .feedback-eyebrow {
-  font-size: 0.63rem;
+  font-size: 0.9rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.14em;
