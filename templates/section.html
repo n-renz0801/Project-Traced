@@ -8,6 +8,7 @@
   class="section-page"
   data-section="{{ section_key }}"
   data-import-url="{{ url_for('section_import', section_key=section_key) }}"
+  data-bulk-delete-url="{{ url_for('section_bulk_delete', section_key=section_key) }}"
 >
   <!-- ── Header ── -->
   <div class="section-header">
@@ -337,6 +338,80 @@
     </div>
   </div>
 
+  <!-- ── Bulk Action Toolbar (superadmin only) ── -->
+  {% if session.get('admin_role') == 'superadmin' %}
+  <div class="bulk-toolbar" id="bulk-toolbar">
+    <div class="bulk-toolbar__left">
+      <span class="bulk-toolbar__count" id="bulk-count">0 selected</span>
+      <button class="bulk-toolbar__deselect" id="bulk-deselect" type="button">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+        Deselect all
+      </button>
+    </div>
+    <div class="bulk-toolbar__right">
+      <button
+        class="bulk-toolbar__btn bulk-toolbar__btn--delete"
+        id="bulk-delete-selected"
+        type="button"
+        disabled
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          <path d="M10 11v6M14 11v6" />
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+        </svg>
+        Delete Selected
+      </button>
+      <button
+        class="bulk-toolbar__btn bulk-toolbar__btn--delete-all"
+        id="bulk-delete-all"
+        type="button"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          <path d="M10 11v6M14 11v6" />
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+        </svg>
+        Delete All
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ── No-results banner ── -->
   <div class="no-results" id="no-results" style="display: none">
     <svg
@@ -394,6 +469,14 @@
     <table class="section-table" id="section-table">
       <thead>
         <tr>
+          {% if session.get('admin_role') == 'superadmin' %}
+          <th class="col-checkbox">
+            <label class="checkbox-wrap" title="Select all">
+              <input type="checkbox" id="select-all-checkbox" />
+              <span class="checkmark"></span>
+            </label>
+          </th>
+          {% endif %}
           <th class="sortable" data-col="0" data-type="text">
             Code <span class="sort-indicator"></span>
           </th>
@@ -422,6 +505,18 @@
       <tbody id="section-tbody">
         {% if records %} {% for r in records %}
         <tr data-id="{{ r.id }}">
+          {% if session.get('admin_role') == 'superadmin' %}
+          <td class="cell-checkbox">
+            <label class="checkbox-wrap">
+              <input
+                type="checkbox"
+                class="row-checkbox"
+                data-id="{{ r.id }}"
+              />
+              <span class="checkmark"></span>
+            </label>
+          </td>
+          {% endif %}
           <td><span class="code-badge">{{ r.code }}</span></td>
           <td>{{ r.process }}</td>
           <td>{{ r.school }}</td>
@@ -533,7 +628,7 @@
         </tr>
         {% endfor %} {% else %}
         <tr id="empty-row">
-          <td colspan="9" class="empty-row">
+          <td colspan="10" class="empty-row">
             <div class="empty-state">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -564,6 +659,71 @@
   <div class="table-footer" id="table-footer">
     <span id="footer-count"></span>
   </div>
+
+  <!-- ── Bulk Delete Confirm Modal ── -->
+  {% if session.get('admin_role') == 'superadmin' %}
+  <div
+    class="bulk-confirm-overlay"
+    id="bulk-confirm-overlay"
+    style="display: none"
+  >
+    <div class="bulk-confirm-modal">
+      <div class="bulk-confirm-modal__icon">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+          />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+      </div>
+      <h3 class="bulk-confirm-modal__title" id="bulk-confirm-title">
+        Delete Records?
+      </h3>
+      <p class="bulk-confirm-modal__body" id="bulk-confirm-body"></p>
+      <div class="bulk-confirm-modal__actions">
+        <button
+          class="bulk-confirm-cancel"
+          id="bulk-confirm-cancel"
+          type="button"
+        >
+          Cancel
+        </button>
+        <button
+          class="bulk-confirm-proceed"
+          id="bulk-confirm-proceed"
+          type="button"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          </svg>
+          Yes, Delete
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %} {% block section_js %}
 <script src="{{ url_for('static', filename='js/section.js') }}"></script>

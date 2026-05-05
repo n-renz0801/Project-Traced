@@ -1578,3 +1578,357 @@ td.over-limit {
   background-color: #fef2f2; /* subtle red background */
   font-weight: 600;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   BULK DELETE ADDITIONS — append these to your existing section.css
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Checkbox column ─────────────────────────────────────────────────── */
+.col-checkbox {
+  width: 40px;
+  padding: 0 0 0 12px !important;
+}
+
+.cell-checkbox {
+  padding: 0 0 0 12px !important;
+}
+
+/* Custom checkbox */
+.checkbox-wrap {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+
+.checkbox-wrap input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.checkmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1.8px solid var(--border, #d1d5db);
+  border-radius: 4px;
+  background: #fff;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
+  flex-shrink: 0;
+}
+
+.checkbox-wrap:hover .checkmark {
+  border-color: var(--primary, #3b82f6);
+}
+
+.checkbox-wrap input:checked ~ .checkmark {
+  background: var(--primary, #3b82f6);
+  border-color: var(--primary, #3b82f6);
+}
+
+.checkbox-wrap input:indeterminate ~ .checkmark {
+  background: var(--primary, #3b82f6);
+  border-color: var(--primary, #3b82f6);
+}
+
+/* Checkmark SVG tick */
+.checkbox-wrap input:checked ~ .checkmark::after {
+  content: "";
+  display: block;
+  width: 4px;
+  height: 7px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg) translateY(-1px);
+}
+
+/* Indeterminate dash */
+.checkbox-wrap input:indeterminate ~ .checkmark::after {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+}
+
+/* Selected row highlight */
+tr.row-selected {
+  background: color-mix(
+    in srgb,
+    var(--primary, #3b82f6) 6%,
+    transparent
+  ) !important;
+}
+
+tr.row-selected td {
+  border-color: color-mix(in srgb, var(--primary, #3b82f6) 15%, transparent);
+}
+
+/* ── Bulk Action Toolbar ──────────────────────────────────────────────── */
+.bulk-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--primary, #3b82f6) 8%, #fff);
+  border: 1.5px solid
+    color-mix(in srgb, var(--primary, #3b82f6) 30%, transparent);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  /* hidden by default */
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  min-height: 0;
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.bulk-toolbar--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  max-height: 64px;
+  padding: 10px 16px;
+}
+
+.bulk-toolbar__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bulk-toolbar__count {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--primary, #3b82f6);
+}
+
+.bulk-toolbar__deselect {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--text-muted, #6b7280);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 6px;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.bulk-toolbar__deselect:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text, #111827);
+}
+
+.bulk-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bulk-toolbar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.1s;
+  white-space: nowrap;
+}
+
+.bulk-toolbar__btn:active {
+  transform: scale(0.97);
+}
+
+.bulk-toolbar__btn--delete {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #e11d48;
+}
+
+.bulk-toolbar__btn--delete:hover:not(:disabled) {
+  background: #ffe4e6;
+  border-color: #fda4af;
+}
+
+.bulk-toolbar__btn--delete:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bulk-toolbar__btn--delete-all {
+  background: #fff;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.bulk-toolbar__btn--delete-all:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+/* ── Bulk Confirm Modal ───────────────────────────────────────────────── */
+.bulk-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(2px);
+}
+
+.bulk-confirm-modal {
+  background: #fff;
+  border-radius: 14px;
+  padding: 32px 28px 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  animation: confirmSlideIn 0.2s ease;
+}
+
+@keyframes confirmSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.bulk-confirm-modal__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fef3c7;
+  color: #d97706;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.bulk-confirm-modal__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text, #111827);
+  margin: 0;
+}
+
+.bulk-confirm-modal__body {
+  font-size: 0.875rem;
+  color: var(--text-muted, #6b7280);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 340px;
+}
+
+.bulk-confirm-modal__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.bulk-confirm-cancel {
+  flex: 1;
+  max-width: 140px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border, #d1d5db);
+  background: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text, #111827);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.bulk-confirm-cancel:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.bulk-confirm-proceed {
+  flex: 1;
+  max-width: 160px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
+}
+
+.bulk-confirm-proceed:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.bulk-confirm-proceed:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Spinner for loading state */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-icon {
+  animation: spin 0.8s linear infinite;
+}

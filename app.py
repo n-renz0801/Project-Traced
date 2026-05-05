@@ -511,6 +511,32 @@ def section_delete(section_key, record_id):
     db.session.commit()
     return redirect(url_for('section_view', section_key=section_key))
 
+@app.route('/<section_key>/bulk-delete', methods=['POST'])
+def section_bulk_delete(section_key):
+    if not is_superadmin():
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    get_section_meta(section_key)
+    data = request.get_json(silent=True) or {}
+    ids = data.get('ids', [])
+    if not ids:
+        return jsonify({'success': False, 'error': 'No IDs provided.'})
+    try:
+        deleted = (
+            SectionRecord.query
+            .filter(
+                SectionRecord.id.in_(ids),
+                SectionRecord.section == section_key
+            )
+            .all()
+        )
+        for record in deleted:
+            db.session.delete(record)
+        db.session.commit()
+        return jsonify({'success': True, 'deleted_count': len(deleted)})
+    except Exception as ex:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(ex)})
+
 @app.route('/<section_key>/import', methods=['POST'])
 def section_import(section_key):
     if not session.get('is_admin'):

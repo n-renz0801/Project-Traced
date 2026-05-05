@@ -1,6 +1,7 @@
 const PAGE = document.querySelector(".section-page");
 const SECTION = PAGE.dataset.section;
 const IMPORT_URL = PAGE.dataset.importUrl;
+const BULK_DELETE_URL = PAGE.dataset.bulkDeleteUrl;
 const EXPORT_FILENAME = `${SECTION}-records.csv`;
 
 /* ══ 1. SEARCH ══════════════════════════════════════════════════════════ */
@@ -42,6 +43,8 @@ searchInput.addEventListener("input", () => {
   noResultsTerm.textContent = `"${searchInput.value.trim()}"`;
   noResults.style.display = q && !anyVisible ? "flex" : "none";
   updateFooter();
+  // Keep toolbar in sync if selection changes due to hidden rows
+  updateBulkToolbar();
 });
 
 searchClear.addEventListener("click", resetSearch);
@@ -87,8 +90,10 @@ function sortTable(col, type, dir) {
   const tbody = document.getElementById("section-tbody");
   const rows = [...tbody.querySelectorAll("tr:not(.empty-placeholder)")];
   rows.sort((a, b) => {
-    const cellA = a.querySelectorAll("td")[col];
-    const cellB = b.querySelectorAll("td")[col];
+    // +1 offset on col index when checkbox column is present
+    const offset = document.getElementById("select-all-checkbox") ? 1 : 0;
+    const cellA = a.querySelectorAll("td")[col + offset];
+    const cellB = b.querySelectorAll("td")[col + offset];
     let valA = (cellA.dataset.sort ?? cellA.textContent).trim();
     let valB = (cellB.dataset.sort ?? cellB.textContent).trim();
     if (type === "number") {
@@ -121,28 +126,31 @@ document.addEventListener("click", () => {
 exportDropdown.addEventListener("click", (e) => e.stopPropagation());
 
 function getTableData() {
-  const headers = [...document.querySelectorAll("#section-table thead th")]
-    .slice(0, -1)
-    .map((th) => {
-      const clone = th.cloneNode(true);
-      clone.querySelectorAll("br").forEach((br) => br.replaceWith(" "));
-      return clone.textContent.replace(/\s+/g, " ").trim();
-    });
+  const allHeaders = [...document.querySelectorAll("#section-table thead th")];
+  // Exclude checkbox col (first, if present) and actions col (last)
+  const hasCheckbox = !!document.getElementById("select-all-checkbox");
+  const sliceStart = hasCheckbox ? 1 : 0;
+  const headers = allHeaders.slice(sliceStart, -1).map((th) => {
+    const clone = th.cloneNode(true);
+    clone.querySelectorAll("br").forEach((br) => br.replaceWith(" "));
+    return clone.textContent.replace(/\s+/g, " ").trim();
+  });
   const rows = [
     ...document.querySelectorAll(
       "#section-tbody tr:not(.empty-placeholder):not(.row-hidden)",
     ),
   ];
-  return { headers, rows };
+  return { headers, rows, hasCheckbox };
 }
 
 document.getElementById("export-csv").addEventListener("click", () => {
-  const { headers, rows } = getTableData();
+  const { headers, rows, hasCheckbox } = getTableData();
   const escape = (v) => `"${String(v).replace(/"/g, '""')}"`;
+  const colOffset = hasCheckbox ? 1 : 0;
   const csvRows = [
     headers.map(escape).join(","),
     ...rows.map((row) => {
-      const cells = [...row.querySelectorAll("td")].slice(0, -1);
+      const cells = [...row.querySelectorAll("td")].slice(colOffset, -1);
       return cells
         .map((td, i) => {
           let val = td.textContent.replace(/\s+/g, " ").trim();
@@ -393,7 +401,6 @@ importSubmit.addEventListener("click", async () => {
   importSubmit.textContent = "Importing…";
   try {
     const res = await fetch(IMPORT_URL, {
-      // ← uses data attribute, not hardcoded
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ records: parsedImportRows }),
@@ -414,6 +421,215 @@ importSubmit.addEventListener("click", async () => {
     importSubmit.disabled = false;
   }
 });
+
+/* ══ 6. MULTI-SELECT & BULK DELETE (superadmin only) ════════════════════ */
+const selectAllCb = document.getElementById("select-all-checkbox");
+const bulkToolbar = document.getElementById("bulk-toolbar");
+const bulkCount = document.getElementById("bulk-count");
+const bulkDeselect = document.getElementById("bulk-deselect");
+const bulkDeleteSelected = document.getElementById("bulk-delete-selected");
+const bulkDeleteAll = document.getElementById("bulk-delete-all");
+const bulkConfirmOverlay = document.getElementById("bulk-confirm-overlay");
+const bulkConfirmTitle = document.getElementById("bulk-confirm-title");
+const bulkConfirmBody = document.getElementById("bulk-confirm-body");
+const bulkConfirmCancel = document.getElementById("bulk-confirm-cancel");
+const bulkConfirmProceed = document.getElementById("bulk-confirm-proceed");
+
+// Only wire up if superadmin elements exist
+if (selectAllCb && bulkToolbar) {
+  function getRowCheckboxes() {
+    return [...document.querySelectorAll(".row-checkbox")];
+  }
+
+  function getCheckedIds() {
+    return getRowCheckboxes()
+      .filter((cb) => cb.checked)
+      .map((cb) => cb.dataset.id);
+  }
+
+  function getAllVisibleIds() {
+    return getRowCheckboxes()
+      .filter((cb) => !cb.closest("tr").classList.contains("row-hidden"))
+      .map((cb) => cb.dataset.id);
+  }
+
+  function getAllIds() {
+    return getRowCheckboxes().map((cb) => cb.dataset.id);
+  }
+
+  function updateBulkToolbar() {
+    const checked = getCheckedIds();
+    const count = checked.length;
+    const total = getRowCheckboxes().filter(
+      (cb) => !cb.closest("tr").classList.contains("row-hidden"),
+    ).length;
+
+    // Update select-all indeterminate state
+    if (count === 0) {
+      selectAllCb.checked = false;
+      selectAllCb.indeterminate = false;
+    } else if (count === total && total > 0) {
+      selectAllCb.checked = true;
+      selectAllCb.indeterminate = false;
+    } else {
+      selectAllCb.checked = false;
+      selectAllCb.indeterminate = true;
+    }
+
+    // Show/hide toolbar
+    bulkToolbar.classList.toggle("bulk-toolbar--visible", count > 0);
+
+    // Update count label
+    bulkCount.textContent =
+      count === 1 ? "1 record selected" : `${count} records selected`;
+
+    // Enable/disable delete selected button
+    if (bulkDeleteSelected) {
+      bulkDeleteSelected.disabled = count === 0;
+    }
+
+    // Highlight selected rows
+    getRowCheckboxes().forEach((cb) => {
+      cb.closest("tr").classList.toggle("row-selected", cb.checked);
+    });
+  }
+
+  // Select all / deselect all via header checkbox
+  selectAllCb.addEventListener("change", () => {
+    const visibleCbs = getRowCheckboxes().filter(
+      (cb) => !cb.closest("tr").classList.contains("row-hidden"),
+    );
+    visibleCbs.forEach((cb) => (cb.checked = selectAllCb.checked));
+    updateBulkToolbar();
+  });
+
+  // Individual row checkboxes
+  document.getElementById("section-tbody").addEventListener("change", (e) => {
+    if (e.target.classList.contains("row-checkbox")) {
+      updateBulkToolbar();
+    }
+  });
+
+  // Deselect all button in toolbar
+  bulkDeselect.addEventListener("click", () => {
+    getRowCheckboxes().forEach((cb) => (cb.checked = false));
+    updateBulkToolbar();
+  });
+
+  // ── Confirm modal logic ──────────────────────────────────────────────
+  let pendingDeleteIds = []; // ids to delete, or null means "all"
+  let deleteAll = false;
+
+  function openConfirmModal(ids, all) {
+    pendingDeleteIds = ids;
+    deleteAll = all;
+    if (all) {
+      const total = getAllIds().length;
+      bulkConfirmTitle.textContent = "Delete All Records?";
+      bulkConfirmBody.textContent = `This will permanently delete all ${total} record${total !== 1 ? "s" : ""} in this section. This action cannot be undone.`;
+    } else {
+      const n = ids.length;
+      bulkConfirmTitle.textContent = `Delete ${n} Record${n !== 1 ? "s" : ""}?`;
+      bulkConfirmBody.textContent = `You are about to permanently delete ${n} selected record${n !== 1 ? "s" : ""}. This action cannot be undone.`;
+    }
+    bulkConfirmOverlay.style.display = "flex";
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeConfirmModal() {
+    bulkConfirmOverlay.style.display = "none";
+    document.body.style.overflow = "";
+    pendingDeleteIds = [];
+    deleteAll = false;
+  }
+
+  bulkConfirmCancel.addEventListener("click", closeConfirmModal);
+  bulkConfirmOverlay.addEventListener("click", (e) => {
+    if (e.target === bulkConfirmOverlay) closeConfirmModal();
+  });
+
+  // Delete Selected
+  bulkDeleteSelected.addEventListener("click", () => {
+    const ids = getCheckedIds();
+    if (!ids.length) return;
+    openConfirmModal(ids, false);
+  });
+
+  // Delete All
+  bulkDeleteAll.addEventListener("click", () => {
+    const ids = getAllIds();
+    if (!ids.length) return;
+    openConfirmModal(ids, true);
+  });
+
+  // Confirm proceed
+  bulkConfirmProceed.addEventListener("click", async () => {
+    const ids = deleteAll ? getAllIds() : pendingDeleteIds;
+    bulkConfirmProceed.disabled = true;
+    bulkConfirmProceed.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="spin-icon"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+      Deleting…`;
+
+    try {
+      const res = await fetch(BULK_DELETE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeConfirmModal();
+        location.reload();
+      } else {
+        alert(data.error || "Delete failed. Please try again.");
+        bulkConfirmProceed.disabled = false;
+        bulkConfirmProceed.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          Yes, Delete`;
+      }
+    } catch {
+      alert("Network error. Please check your connection and try again.");
+      bulkConfirmProceed.disabled = false;
+    }
+  });
+
+  // Initial state
+  updateBulkToolbar();
+}
+
+// Expose for search integration
+function updateBulkToolbar() {
+  if (!selectAllCb) return;
+  const checked = document.querySelectorAll(".row-checkbox:checked").length;
+  const total = [...document.querySelectorAll(".row-checkbox")].filter(
+    (cb) => !cb.closest("tr").classList.contains("row-hidden"),
+  ).length;
+
+  if (checked === 0) {
+    selectAllCb.checked = false;
+    selectAllCb.indeterminate = false;
+  } else if (checked === total && total > 0) {
+    selectAllCb.checked = true;
+    selectAllCb.indeterminate = false;
+  } else {
+    selectAllCb.checked = false;
+    selectAllCb.indeterminate = true;
+  }
+
+  if (bulkToolbar) {
+    bulkToolbar.classList.toggle("bulk-toolbar--visible", checked > 0);
+    if (bulkCount) {
+      bulkCount.textContent =
+        checked === 1 ? "1 record selected" : `${checked} records selected`;
+    }
+    if (bulkDeleteSelected) {
+      bulkDeleteSelected.disabled = checked === 0;
+    }
+  }
+  document.querySelectorAll(".row-checkbox").forEach((cb) => {
+    cb.closest("tr").classList.toggle("row-selected", cb.checked);
+  });
+}
 
 /* ══ Init ═══════════════════════════════════════════════════════════════ */
 updateFooter();
