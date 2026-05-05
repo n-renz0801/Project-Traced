@@ -1286,3 +1286,83 @@
     height: 1.5px;
   }
 }
+
+/* ── Home Export Button ───────────────────────────────────────────────────── */
+.export-menu-wrapper {
+  position: relative;
+}
+
+.export-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--navy);
+  background: var(--white);
+  border: 1.5px solid var(--navy);
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+  white-space: nowrap;
+}
+.export-trigger-btn:hover,
+.export-trigger-btn.active {
+  background: var(--navy);
+  color: var(--white);
+  box-shadow: 0 3px 10px var(--shadow);
+}
+.export-chevron {
+  transition: transform 0.18s ease;
+}
+.export-trigger-btn.active .export-chevron {
+  transform: rotate(180deg);
+}
+
+.export-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px var(--shadow);
+  min-width: 180px;
+  z-index: 100;
+  overflow: hidden;
+  flex-direction: column;
+}
+.export-dropdown-menu.open {
+  display: flex;
+}
+
+.export-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  width: 100%;
+}
+.export-option:hover {
+  background: var(--off-white);
+  color: var(--navy);
+}
+.export-option + .export-option {
+  border-top: 1px solid var(--border);
+}

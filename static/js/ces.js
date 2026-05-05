@@ -165,24 +165,6 @@ document.getElementById("export-csv").addEventListener("click", () => {
   closeExport();
 });
 
-document.getElementById("export-json").addEventListener("click", () => {
-  const { headers, rows } = getTableData();
-  const data = rows.map((row) => {
-    const obj = {};
-    [...row.querySelectorAll("td")].slice(0, -1).forEach((td, i) => {
-      const key = headers[i].toLowerCase().replace(/\s+/g, "_");
-      obj[key] = td.textContent.replace(/\s+/g, " ").trim();
-    });
-    return obj;
-  });
-  downloadFile(
-    JSON.stringify(data, null, 2),
-    "application/json",
-    "ces-records.json",
-  );
-  closeExport();
-});
-
 document.getElementById("export-print").addEventListener("click", () => {
   window.print();
   closeExport();
