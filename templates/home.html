@@ -6,60 +6,63 @@
 {% endblock %} {% block content %}
 <div class="dashboard-page">
   <div class="dashboard-header">
-    <div class="header-text">
-      <div class="masthead">
-        <div class="masthead-org">
-          <span class="org-name">Schools Division Office of Antipolo City</span>
-          <span class="org-sgod"
-            >School Governance and Operations Division (SGOD)</span
+    <!-- Row 1: Admin bar -->
+    <div class="header-admin-bar">
+      <div class="masthead-org">
+        <span class="org-name">Schools Division Office of Antipolo City</span>
+        <span class="org-sgod"
+          >School Governance and Operations Division (SGOD)</span
+        >
+      </div>
+      <div class="header-admin-right">
+        <div class="header-date" id="live-date"></div>
+        {% if session.get('is_admin') %}
+        <button
+          class="print-btn"
+          onclick="window.print()"
+          title="Print or download this page"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           >
-        </div>
-        <div class="masthead-divider"></div>
-        <div class="masthead-title">
-          <h1 class="dashboard-title">Project TRACED</h1>
-          <p class="dashboard-subtitle">
-            <span class="traced-letter">T</span>racking
-            <span class="traced-cdot">·</span>
-            <span class="traced-letter">R</span>outing
-            <span class="traced-cdot">·</span>
-            <span class="traced-letter">A</span>ccountability
-            <span class="traced-cdot">·</span>
-            <span class="traced-letter">C</span>ontrol
-            <span class="traced-cdot">·</span>
-            <span class="traced-letter">E</span>valuation of
-            <span class="traced-letter">D</span>ocuments
-          </p>
-        </div>
+            <polyline points="6 9 6 2 18 2 18 9" />
+            <path
+              d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
+            />
+            <rect x="6" y="14" width="12" height="8" />
+          </svg>
+          Print / Download
+        </button>
+        {% endif %}
       </div>
     </div>
-    <div class="header-right">
-      <div class="header-date" id="live-date"></div>
-      {% if session.get('is_admin') %}
-      <button
-        class="print-btn"
-        onclick="window.print()"
-        title="Print or download this page"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <polyline points="6 9 6 2 18 2 18 9" />
-          <path
-            d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
-          />
-          <rect x="6" y="14" width="12" height="8" />
-        </svg>
-        Print / Download
-      </button>
-      {% endif %}
+
+    <!-- Row 2: Title row -->
+    <div class="header-title-bar">
+      <div class="masthead-divider"></div>
+      <div class="masthead-title">
+        <h1 class="dashboard-title">Project TRACED</h1>
+        <p class="dashboard-subtitle">
+          <span class="traced-letter">T</span>racking
+          <span class="traced-cdot">·</span>
+          <span class="traced-letter">R</span>outing
+          <span class="traced-cdot">·</span>
+          <span class="traced-letter">A</span>ccountability
+          <span class="traced-cdot">·</span>
+          <span class="traced-letter">C</span>ontrol
+          <span class="traced-cdot">·</span>
+          <span class="traced-letter">E</span>valuation of
+          <span class="traced-letter">D</span>ocuments
+        </p>
+      </div>
     </div>
   </div>
 
