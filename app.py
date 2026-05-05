@@ -233,9 +233,45 @@ def get_section_meta(section_key):
 
 CHANGELOG = [
     {
+        "version": "v1.6",
+        "date": "May 6, 2026",
+        "color": "blue",
+        "title": "Access control improvements, bulk actions & UI refinements",
+        "entries": [
+            {
+            "tag": "feat",
+            "text": "Restricted changelog access to superadmin and authorized user (Jho) only"
+            },
+            {
+            "tag": "feat",
+            "text": "Added selection-based deletion and bulk deletion functionality for records"
+            },
+            {
+            "tag": "fix",
+            "text": "Resolved issue where checkboxes remained visible after superadmin logout"
+            },
+            {
+            "tag": "improve",
+            "text": "Refactored codebase to introduce a unified template structure across all sections"
+            },
+            {
+            "tag": "improve",
+            "text": "Implemented visual alert: background turns red when processing days exceed limit"
+            },
+            {
+            "tag": "improve",
+            "text": "Updated font color of TRACED subtitle on Home Page for better visibility"
+            },
+            {
+            "tag": "chore",
+            "text": "Removed unnecessary and unused files to streamline the project structure"
+            }
+        ]
+    },
+    {
         "version": "v1.5",
         "date": "May 5, 2026",
-        "color": "blue",
+        "color": "gray",
         "title": "EPS module integration, data tools & UX refinements",
         "entries": [
             {"tag": "feat", "text": "Introduced feedback module for collecting user comments, suggestions, and update requests with file upload support and automatic text extraction"},
