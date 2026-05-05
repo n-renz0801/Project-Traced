@@ -67,7 +67,7 @@
         {% for section in sections %}
         <li>
           <!-- prettier-ignore -->
-          <a href="{{ url_for(section.id) }}"
+          <a href="{{ url_for('section_view', section_key=section.id) }}"
                    {% if active == section.id %}class="active"{% endif %}>
                     {{ section.label }}
                 </a>

@@ -1,54 +1,47 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, abort
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import holidays
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
 
 app = Flask(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://project_traced_user:IJx98IB2sDqKIcu7pCGFCGOxJGEHBCui@dpg-d7qel2jrjlhs73cie6a0-a.ohio-postgres.render.com/project_traced'
-app.config['SECRET_KEY'] = 'projectTRACEDkey123'  # change this!
+app.config['SECRET_KEY'] = 'projectTRACEDkey123'
 db = SQLAlchemy(app)
 
 # ── Admin Model ───────────────────────────────────────────────────────────────
 class Admin(db.Model):
     __tablename__ = 'admins'
-
     id         = db.Column(db.Integer, primary_key=True)
     username   = db.Column(db.String(100), unique=True, nullable=False)
     password   = db.Column(db.String(255), nullable=False)
-    role       = db.Column(db.String(20), default='admin')  # 'admin' or 'superadmin'
+    role       = db.Column(db.String(20), default='admin')
     created_at = db.Column(db.DateTime, server_default=func.now())
 
     def to_dict(self):
-        return {
-            'id':         self.id,
-            'username':   self.username,
-            'role':       self.role,
-            'created_at': self.created_at.isoformat(),
-        }
-    
+        return {'id': self.id, 'username': self.username, 'role': self.role, 'created_at': self.created_at.isoformat()}
 
-# ── Models ────────────────────────────────────────────────────────────────────
 
-class CESRecord(db.Model):
-    __tablename__ = 'ces_records'
+# ── Generic Section Record Model ──────────────────────────────────────────────
+class SectionRecord(db.Model):
+    __tablename__ = 'section_records'
 
-    id               = db.Column(db.Integer, primary_key=True)
-    code             = db.Column(db.String(20), unique=True, nullable=False)
-    process          = db.Column(db.String(200), nullable=False)
-    school           = db.Column(db.String(200), nullable=False)
-    date_received    = db.Column(db.Date, nullable=True)
-    status           = db.Column(db.String(100), nullable=False)
-    date_completed   = db.Column(db.Date, nullable=True)
-    processing_days  = db.Column(db.Integer, nullable=True)
-    remarks          = db.Column(db.Text, nullable=True)
+    id              = db.Column(db.Integer, primary_key=True)
+    section         = db.Column(db.String(20), nullable=False, index=True)  # 'ces', 'eps', etc.
+    code            = db.Column(db.String(30), unique=True, nullable=False)
+    process         = db.Column(db.String(200), nullable=False)
+    school          = db.Column(db.String(200), nullable=False)
+    date_received   = db.Column(db.Date, nullable=True)
+    status          = db.Column(db.String(100), nullable=False)
+    date_completed  = db.Column(db.Date, nullable=True)
+    processing_days = db.Column(db.Integer, nullable=True)
+    remarks         = db.Column(db.Text, nullable=True)
 
     def to_dict(self):
         return {
             'id':              self.id,
+            'section':         self.section,
             'code':            self.code,
             'process':         self.process,
             'school':          self.school,
@@ -60,45 +53,17 @@ class CESRecord(db.Model):
         }
 
 
+# ── Feedback Model ────────────────────────────────────────────────────────────
 class FeedbackRating(db.Model):
     __tablename__ = 'feedback_ratings'
-
     id           = db.Column(db.Integer, primary_key=True)
-    rating       = db.Column(db.Integer, nullable=False)          # 1–5
+    rating       = db.Column(db.Integer, nullable=False)
     submitted_at = db.Column(db.DateTime, server_default=func.now(), nullable=False)
 
     def to_dict(self):
-        return {
-            'id':           self.id,
-            'rating':       self.rating,
-            'submitted_at': self.submitted_at.isoformat(),
-        }
-    
-class EPSRecord(db.Model):
-    __tablename__ = 'eps_records'
+        return {'id': self.id, 'rating': self.rating, 'submitted_at': self.submitted_at.isoformat()}
 
-    id               = db.Column(db.Integer, primary_key=True)
-    code             = db.Column(db.String(20), unique=True, nullable=False)
-    process          = db.Column(db.String(200), nullable=False)
-    school           = db.Column(db.String(200), nullable=False)
-    date_received    = db.Column(db.Date, nullable=True)
-    status           = db.Column(db.String(100), nullable=False)
-    date_completed   = db.Column(db.Date, nullable=True)
-    processing_days  = db.Column(db.Integer, nullable=True)
-    remarks          = db.Column(db.Text, nullable=True)
 
-    def to_dict(self):
-        return {
-            'id':              self.id,
-            'code':            self.code,
-            'process':         self.process,
-            'school':          self.school,
-            'date_received':   self.date_received.isoformat()  if self.date_received  else '',
-            'status':          self.status,
-            'date_completed':  self.date_completed.isoformat() if self.date_completed else '',
-            'processing_days': self.processing_days,
-            'remarks':         self.remarks or '',
-        }
     
 
 # ── Changelog Feedback Model ──────────────────────────────────────────────────
@@ -134,7 +99,6 @@ def is_superadmin():
     return session.get('is_admin', False) and session.get('admin_role') == 'superadmin'
 
 def compute_processing_days(start: date, end: date) -> int:
-    """Count weekdays between start and end (inclusive) excluding PH holidays."""
     if not start or not end or end < start:
         return 0
     ph_holidays = holidays.Philippines(years=range(start.year, end.year + 1))
@@ -146,13 +110,14 @@ def compute_processing_days(start: date, end: date) -> int:
         current += timedelta(days=1)
     return count
 
-
-def next_ces_code() -> str:
+def next_code(section_key: str) -> str:
+    prefix = section_key.upper()
     year = date.today().year
     last = (
-        db.session.query(CESRecord)
-        .filter(CESRecord.code.like(f'CES{year}__%'))
-        .order_by(CESRecord.id.desc())
+        SectionRecord.query
+        .filter_by(section=section_key)
+        .filter(SectionRecord.code.like(f'{prefix}{year}__%'))
+        .order_by(SectionRecord.id.desc())
         .first()
     )
     if last:
@@ -162,83 +127,109 @@ def next_ces_code() -> str:
             num = 1
     else:
         num = 1
-    return f'CES{year}__{num:02d}'
+    return f'{prefix}{year}__{num:02d}'
 
-
-def get_ces_stats() -> dict:
-    """Return record count and average processing days for CES."""
-    count = db.session.query(func.count(CESRecord.id)).scalar() or 0
-    avg = db.session.query(func.avg(CESRecord.processing_days)).scalar()
+def get_section_stats(section_key: str) -> dict:
+    count = SectionRecord.query.filter_by(section=section_key).count()
+    avg = db.session.query(func.avg(SectionRecord.processing_days))\
+        .filter(SectionRecord.section == section_key).scalar()
     return {
-        "record_count": count,
-        "avg_processing_days": round(float(avg), 1) if avg is not None else None,
+        'record_count': count,
+        'avg_processing_days': round(float(avg), 1) if avg is not None else None,
     }
 
-
 def get_feedback_stats() -> dict:
-    """Return overall feedback stats for the dashboard."""
-    total  = db.session.query(func.count(FeedbackRating.id)).scalar() or 0
-    avg    = db.session.query(func.avg(FeedbackRating.rating)).scalar()
-
-    # Distribution: count per star 1–5
+    total = db.session.query(func.count(FeedbackRating.id)).scalar() or 0
+    avg   = db.session.query(func.avg(FeedbackRating.rating)).scalar()
     dist_rows = (
         db.session.query(FeedbackRating.rating, func.count(FeedbackRating.id))
-        .group_by(FeedbackRating.rating)
-        .all()
+        .group_by(FeedbackRating.rating).all()
     )
     distribution = {i: 0 for i in range(1, 6)}
     for rating, cnt in dist_rows:
         distribution[rating] = cnt
-
     return {
-        "total_responses": total,
-        "avg_rating":      round(float(avg), 1) if avg else None,
-        "distribution":    distribution,
+        'total_responses': total,
+        'avg_rating':      round(float(avg), 1) if avg else None,
+        'distribution':    distribution,
     }
 
-
-def next_eps_code() -> str:
-    year = date.today().year
-    last = (
-        db.session.query(EPSRecord)
-        .filter(EPSRecord.code.like(f'EPS{year}__%'))
-        .order_by(EPSRecord.id.desc())
-        .first()
-    )
-    if last:
+def parse_date(val):
+    if not val or str(val).strip() in ('', '—', 'None'):
+        return None
+    for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%b %d, %Y', '%B %d, %Y'):
         try:
-            num = int(last.code.split('__')[-1]) + 1
+            return datetime.strptime(str(val).strip(), fmt).date()
         except ValueError:
-            num = 1
-    else:
-        num = 1
-    return f'EPS{year}__{num:02d}'
+            continue
+    return None
 
 
-def get_eps_stats() -> dict:
-    count = db.session.query(func.count(EPSRecord.id)).scalar() or 0
-    avg = db.session.query(func.avg(EPSRecord.processing_days)).scalar()
-    return {
-        "record_count": count,
-        "avg_processing_days": round(float(avg), 1) if avg is not None else None,
-    }
+# ── Section Config ────────────────────────────────────────────────────────────
+# Each section defines its own process list. Everything else is shared.
 
+SECTION_PROCESSES = {
+    'ces':  ['SIP/AIP Evaluation', 'Budget Realignment', 'Project Proposal/Concept Paper Evaluation', 'Resource Speaker Invitation', 'Certification (Utilization/Adoption)'],
+    'eps':  ['SSC Registration', 'Resource Speaker Invitation'],
+    'smme': ['Crafting of M&E Tool', 'Resource Speaker Invitation'],
+    'pr':   ['Permit to Conduct Study', 'Request for Substitute Teacher', 'Resource Speaker Invitation'],
+    'hrd':  ['INSET Proposal Evaluation', 'LAC Proposal Evaluation', 'GAD Proposal Evaluation', 'Resource Speaker Invitation'],
+    'yf':   ['LRP Concerns', 'Resource Speaker Invitation'],
+    'smn':  ['Conduct of Off-Campus Activity', 'Resource Speaker Invitation'],
+    'shn':  ['Medical & Dental Checkup', 'Resource Speaker Invitation'],
+    'drrm': ['School Inspection', 'Resource Speaker Invitation'],
+    'ef':   ['School Inspection (With SDO)', 'School Inspection (With LGU)', 'Checking & Approval of Program of Works'],
+}
 
-# ── Navigation ────────────────────────────────────────────────────────────────
-
-# Base section definitions — stats are injected at request time in home()
 SECTIONS = [
-    {"id": "ces",  "label": "CES",  "full": "Chief Education Supervisor"},
-    {"id": "eps",  "label": "EPS",  "full": "Education Program Supervisor"},
-    {"id": "smme", "label": "SMME", "full": "School Management Monitoring and Evaluation"},
-    {"id": "pr",   "label": "PR",   "full": "Planning and Research"},
-    {"id": "hrd",  "label": "HRD",  "full": "Human Resource Development"},
-    {"id": "yf",   "label": "YF",   "full": "Youth Formation"},
-    {"id": "smn",  "label": "SMN",  "full": "Social Mobilization and Networking"},
-    {"id": "shn",  "label": "SHN",  "full": "School Health and Nutrition"},
-    {"id": "drrm", "label": "DRRM", "full": "Disaster Risk Reduction Management"},
-    {"id": "ef",   "label": "EF",   "full": "Education Facilities"},
+    {'id': 'ces',  'label': 'CES',  'full': 'Chief Education Supervisor'},
+    {'id': 'eps',  'label': 'EPS',  'full': 'Education Program Supervisor'},
+    {'id': 'smme', 'label': 'SMME', 'full': 'School Management Monitoring and Evaluation'},
+    {'id': 'pr',   'label': 'PR',   'full': 'Planning and Research'},
+    {'id': 'hrd',  'label': 'HRD',  'full': 'Human Resource Development'},
+    {'id': 'yf',   'label': 'YF',   'full': 'Youth Formation'},
+    {'id': 'smn',  'label': 'SMN',  'full': 'Social Mobilization and Networking'},
+    {'id': 'shn',  'label': 'SHN',  'full': 'School Health and Nutrition'},
+    {'id': 'drrm', 'label': 'DRRM', 'full': 'Disaster Risk Reduction Management'},
+    {'id': 'ef',   'label': 'EF',   'full': 'Education Facilities'},
 ]
+
+SCHOOLS = [
+    'Antipolo City National Science and Technology HS', 'Antipolo City Senior HS',
+    'Antipolo City SPED Center', 'Antipolo NHS', 'Apia Integrated School',
+    'Bagong Nayon I ES', 'Bagong Nayon II ES', 'Bagong Nayon II NHS', 'Bagong Nayon IV ES',
+    'Binayoyo Integrated School', 'Cabading ES', 'Calawis ES', 'Calawis NHS',
+    'Canumay ES', 'Canumay NHS', 'Cupang ES', 'Cupang ES Annex', 'Cupang NHS',
+    'Dalig ES', 'Dalig NHS', 'Dela Paz ES', 'Dela Paz NHS', 'Inuman ES',
+    'Isaias S. Tapales ES', 'Jesus S. Cabarrus ES', 'Juan Sumulong ES', 'Kaila ES',
+    'Kaysakat ES', 'Kaysakat NHS', 'Knights of Columbus ES', 'Libis ES', 'Lores ES',
+    'Mambugan I ES', 'Mambugan II ES', 'Mambugan NHS', 'Marcelino M. Santos NHS',
+    'Maximo L. Gatlabayan Memorial NHS', 'Mayamot ES', 'Mayamot NHS',
+    'Muntindilaw ES', 'Muntindilaw NHS', 'Nazarene Ville ES', 'Old Boso-boso ES',
+    'Old Boso-boso NHS', 'Paglitaw ES', 'Pantay ES', 'Peace Village ES',
+    'Peñafrancia ES', 'Peñafrancia ES Annex', 'Rizza ES', 'Rizza NHS',
+    'San Antonio Village ES', 'San Isidro ES', 'San Isidro NHS', 'San Jose NHS',
+    'San Joseph ES', 'San Juan NHS', 'San Luis ES', 'San Roque NHS', 'San Ysiro ES',
+    'Sapinit ES', 'Sta. Cruz ES', 'Sumilang ES', 'Taguete ES', 'Tanza ES',
+    'Teofila Z. Rovero Memorial ES', 'Upper Kilingan ES', 'CID', 'OSDS', 'SGOD', 'Others',
+]
+
+STATUSES = ['Not yet started', 'On-going', 'Completed', 'Forwarded to CID', 'Forwarded to OSDS', 'Scheduled', 'Rescheduled']
+
+def sections_with_stats() -> list:
+    result = []
+    for section in SECTIONS:
+        s = dict(section)
+        s.update(get_section_stats(s['id']))
+        result.append(s)
+    return result
+
+def get_section_meta(section_key):
+    """Return the SECTIONS entry for a given key, or 404."""
+    meta = next((s for s in SECTIONS if s['id'] == section_key), None)
+    if not meta:
+        abort(404)
+    return meta
 
 CHANGELOG = [
     {
@@ -298,39 +289,12 @@ CHANGELOG = [
     },
 ]
 
-
-# Map each section id to its stats-fetching function.
-SECTION_STATS_FN = {
-    "ces": get_ces_stats,
-    "eps": get_eps_stats,
-}
-
-
-def sections_with_stats() -> list:
-    """Return SECTIONS list with record_count and avg_processing_days injected."""
-    result = []
-    for section in SECTIONS:
-        s = dict(section)
-        fn = SECTION_STATS_FN.get(s["id"])
-        if fn:
-            s.update(fn())
-        else:
-            s["record_count"] = 0
-            s["avg_processing_days"] = None
-        result.append(s)
-    return result
-
-
-# ── Routes ────────────────────────────────────────────────────────────────────
-
-@app.route("/")
+# ── Home ──────────────────────────────────────────────────────────────────────
+@app.route('/')
 def home():
-    feedback_stats = get_feedback_stats()
-    return render_template(
-        "home.html",
-        sections=sections_with_stats(),
-        active="home",
-        feedback_stats=feedback_stats,
+    return render_template('home.html',
+        sections=sections_with_stats(), active='home',
+        feedback_stats=get_feedback_stats(),
     )
 
 # ── Admin Auth ────────────────────────────────────────────────────────────────
@@ -461,110 +425,106 @@ def feedback_log():
                            active="feedback_log", timedelta=timedelta)
 
 
-# ── CES ──────────────────────────────────────────────────────────────────────
+# ── Generic Section Routes (one set handles ALL sections) ────────────────────
 
-@app.route("/ces")
-def ces():
-    records = CESRecord.query.order_by(CESRecord.id).all()
-    return render_template("ces.html", sections=SECTIONS, active="ces", records=records)
+@app.route('/<section_key>')
+def section_view(section_key):
+    meta = get_section_meta(section_key)
+    records = SectionRecord.query.filter_by(section=section_key).order_by(SectionRecord.id).all()
+    return render_template('section.html',
+        sections=SECTIONS, active=section_key,
+        meta=meta, records=records,
+        section_key=section_key,
+    )
 
-
-@app.route("/ces/add", methods=["GET", "POST"])
-def ces_add():
+@app.route('/<section_key>/add', methods=['GET', 'POST'])
+def section_add(section_key):
     if not is_admin():
         abort(403)
-    if request.method == "POST":
-        dr = request.form.get("date_received")
-        dc = request.form.get("date_completed")
-        date_received   = date.fromisoformat(dr) if dr else None
-        date_completed  = date.fromisoformat(dc) if dc else None
-        processing_days = compute_processing_days(date_received, date_completed) if date_received and date_completed else None
-
-        record = CESRecord(
-            code            = next_ces_code(),
-            process         = request.form["process"],
-            school          = request.form["school"],
+    meta = get_section_meta(section_key)
+    if request.method == 'POST':
+        dr = request.form.get('date_received')
+        dc = request.form.get('date_completed')
+        date_received  = date.fromisoformat(dr) if dr else None
+        date_completed = date.fromisoformat(dc) if dc else None
+        record = SectionRecord(
+            section         = section_key,
+            code            = next_code(section_key),
+            process         = request.form['process'],
+            school          = request.form['school'],
             date_received   = date_received,
-            status          = request.form["status"],
+            status          = request.form['status'],
             date_completed  = date_completed,
-            processing_days = processing_days,
-            remarks         = request.form.get("remarks", ""),
+            processing_days = compute_processing_days(date_received, date_completed) if date_received and date_completed else None,
+            remarks         = request.form.get('remarks', ''),
         )
         db.session.add(record)
         db.session.commit()
-        return redirect(url_for("ces"))
+        return redirect(url_for('section_view', section_key=section_key))
+    return render_template('section_form.html',
+        sections=SECTIONS, active=section_key,
+        meta=meta, mode='add', record=None,
+        new_code=next_code(section_key),
+        processes=SECTION_PROCESSES.get(section_key, []),
+        schools=SCHOOLS,
+        statuses=STATUSES,
+        section_key=section_key,
+    )
 
-    new_code = next_ces_code()
-    return render_template("ces_form.html", sections=SECTIONS, active="ces",
-                           mode="add", record=None, new_code=new_code)
-
-
-@app.route("/ces/edit/<int:record_id>", methods=["GET", "POST"])
-def ces_edit(record_id):
+@app.route('/<section_key>/edit/<int:record_id>', methods=['GET', 'POST'])
+def section_edit(section_key, record_id):
     if not is_admin():
         abort(403)
-
-    record = CESRecord.query.get_or_404(record_id)
-
-    if request.method == "POST":
-        dr = request.form.get("date_received")
-        dc = request.form.get("date_completed")
-        date_received   = date.fromisoformat(dr) if dr else None
-        date_completed  = date.fromisoformat(dc) if dc else None
-        processing_days = compute_processing_days(date_received, date_completed) if date_received and date_completed else None
-
-        record.process         = request.form["process"]
-        record.school          = request.form["school"]
+    meta = get_section_meta(section_key)
+    record = SectionRecord.query.filter_by(id=record_id, section=section_key).first_or_404()
+    if request.method == 'POST':
+        dr = request.form.get('date_received')
+        dc = request.form.get('date_completed')
+        date_received  = date.fromisoformat(dr) if dr else None
+        date_completed = date.fromisoformat(dc) if dc else None
+        record.process         = request.form['process']
+        record.school          = request.form['school']
         record.date_received   = date_received
-        record.status          = request.form["status"]
+        record.status          = request.form['status']
         record.date_completed  = date_completed
-        record.processing_days = processing_days
-        record.remarks         = request.form.get("remarks", "")
+        record.processing_days = compute_processing_days(date_received, date_completed) if date_received and date_completed else None
+        record.remarks         = request.form.get('remarks', '')
         db.session.commit()
-        return redirect(url_for("ces"))
+        return redirect(url_for('section_view', section_key=section_key))
+    return render_template('section_form.html',
+        sections=SECTIONS, active=section_key,
+        meta=meta, mode='edit', record=record,
+        new_code=record.code,
+        processes=SECTION_PROCESSES.get(section_key, []),
+        schools=SCHOOLS,
+        statuses=STATUSES,
+        section_key=section_key,
+    )
 
-    return render_template("ces_form.html", sections=SECTIONS, active="ces",
-                           mode="edit", record=record, new_code=record.code)
-
-
-@app.route("/ces/delete/<int:record_id>", methods=["POST"])
-def ces_delete(record_id):
+@app.route('/<section_key>/delete/<int:record_id>', methods=['POST'])
+def section_delete(section_key, record_id):
     if not is_superadmin():
         abort(403)
-    record = CESRecord.query.get_or_404(record_id)
+    get_section_meta(section_key)
+    record = SectionRecord.query.filter_by(id=record_id, section=section_key).first_or_404()
     db.session.delete(record)
     db.session.commit()
-    return redirect(url_for("ces"))
+    return redirect(url_for('section_view', section_key=section_key))
 
-
-@app.route("/ces/import", methods=["POST"])
-def ces_import():
-    if not session.get("is_admin"):
-        return jsonify({"success": False, "error": "Unauthorized"}), 403
-
+@app.route('/<section_key>/import', methods=['POST'])
+def section_import(section_key):
+    if not session.get('is_admin'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    get_section_meta(section_key)
     data = request.get_json()
-    records = data.get("records", [])
+    records = data.get('records', [])
     if not records:
-        return jsonify({"success": False, "error": "No records provided."})
-
+        return jsonify({'success': False, 'error': 'No records provided.'})
     try:
-        def parse_date(val):
-            if not val or str(val).strip() in ("", "—", "None"):
-                return None
-            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%b %d, %Y", "%B %d, %Y"):
-                try:
-                    return datetime.strptime(str(val).strip(), fmt).date()
-                except ValueError:
-                    continue
-            print(f"Warning: could not parse date '{val}'")
-            return None
-
-        # Find the highest existing code number to continue from
-        last = db.session.query(CESRecord).order_by(CESRecord.id.desc()).first()
-        # Extract the numeric suffix from the last code, e.g. "CES2026__47" → 47
+        last = SectionRecord.query.filter_by(section=section_key).order_by(SectionRecord.id.desc()).first()
         if last and last.code:
             try:
-                counter = int(last.code.split("__")[-1])
+                counter = int(last.code.split('__')[-1])
             except ValueError:
                 counter = 0
         else:
@@ -572,34 +532,30 @@ def ces_import():
 
         for r in records:
             counter += 1
-            year = datetime.now().year
-            new_code = f"CES{year}__{counter:02d}"
-
+            new_code = f"{section_key.upper()}{datetime.now().year}__{counter:02d}"
             proc_days = None
-            if r.get("processing_days", "").strip() not in ("", "—"):
+            raw_days = str(r.get('processing_days', '')).strip()
+            if raw_days not in ('', '—'):
                 try:
-                    proc_days = int(float(r["processing_days"]))
+                    proc_days = int(float(raw_days))
                 except ValueError:
                     pass
-
-            new_record = CESRecord(
-                code=new_code,
-                process=r.get("process", ""),
-                school=r.get("school", ""),
-                date_received=parse_date(r.get("date_received")),
-                status=r.get("status", ""),
-                date_completed=parse_date(r.get("date_completed")),
-                processing_days=proc_days,
-                remarks=r.get("remarks", ""),
-            )
-            db.session.add(new_record)
-
+            db.session.add(SectionRecord(
+                section         = section_key,
+                code            = new_code,
+                process         = r.get('process', ''),
+                school          = r.get('school', ''),
+                date_received   = parse_date(r.get('date_received')),
+                status          = r.get('status', ''),
+                date_completed  = parse_date(r.get('date_completed')),
+                processing_days = proc_days,
+                remarks         = r.get('remarks', ''),
+            ))
         db.session.commit()
-        return jsonify({"success": True})
-
+        return jsonify({'success': True})
     except Exception as ex:
         db.session.rollback()
-        return jsonify({"success": False, "error": str(ex)})
+        return jsonify({'success': False, 'error': str(ex)})
 
 
 # ── API: compute processing days on-the-fly ───────────────────────────────────
@@ -615,178 +571,6 @@ def api_processing_days():
         return jsonify({"days": days})
     except Exception:
         return jsonify({"days": None})
-
-
-@app.route("/eps")
-def eps():
-    records = EPSRecord.query.order_by(EPSRecord.id).all()
-    return render_template("eps.html", sections=SECTIONS, active="eps", records=records)
-
-
-@app.route("/eps/add", methods=["GET", "POST"])
-def eps_add():
-    if not is_admin():
-        abort(403)
-    if request.method == "POST":
-        dr = request.form.get("date_received")
-        dc = request.form.get("date_completed")
-        date_received   = date.fromisoformat(dr) if dr else None
-        date_completed  = date.fromisoformat(dc) if dc else None
-        processing_days = compute_processing_days(date_received, date_completed) if date_received and date_completed else None
-
-        record = EPSRecord(
-            code            = next_eps_code(),
-            process         = request.form["process"],
-            school          = request.form["school"],
-            date_received   = date_received,
-            status          = request.form["status"],
-            date_completed  = date_completed,
-            processing_days = processing_days,
-            remarks         = request.form.get("remarks", ""),
-        )
-        db.session.add(record)
-        db.session.commit()
-        return redirect(url_for("eps"))
-
-    new_code = next_eps_code()
-    return render_template("eps_form.html", sections=SECTIONS, active="eps",
-                           mode="add", record=None, new_code=new_code)
-
-
-@app.route("/eps/edit/<int:record_id>", methods=["GET", "POST"])
-def eps_edit(record_id):
-    if not is_admin():
-        abort(403)
-
-    record = EPSRecord.query.get_or_404(record_id)
-
-    if request.method == "POST":
-        dr = request.form.get("date_received")
-        dc = request.form.get("date_completed")
-        date_received   = date.fromisoformat(dr) if dr else None
-        date_completed  = date.fromisoformat(dc) if dc else None
-        processing_days = compute_processing_days(date_received, date_completed) if date_received and date_completed else None
-
-        record.process         = request.form["process"]
-        record.school          = request.form["school"]
-        record.date_received   = date_received
-        record.status          = request.form["status"]
-        record.date_completed  = date_completed
-        record.processing_days = processing_days
-        record.remarks         = request.form.get("remarks", "")
-        db.session.commit()
-        return redirect(url_for("eps"))
-
-    return render_template("eps_form.html", sections=SECTIONS, active="eps",
-                           mode="edit", record=record, new_code=record.code)
-
-
-@app.route("/eps/delete/<int:record_id>", methods=["POST"])
-def eps_delete(record_id):
-    if not is_superadmin():
-        abort(403)
-    record = EPSRecord.query.get_or_404(record_id)
-    db.session.delete(record)
-    db.session.commit()
-    return redirect(url_for("eps"))
-
-
-@app.route("/eps/import", methods=["POST"])
-def eps_import():
-    if not session.get("is_admin"):
-        return jsonify({"success": False, "error": "Unauthorized"}), 403
-
-    data = request.get_json()
-    records = data.get("records", [])
-    if not records:
-        return jsonify({"success": False, "error": "No records provided."})
-
-    try:
-        def parse_date(val):
-            if not val or str(val).strip() in ("", "—", "None"):
-                return None
-            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%b %d, %Y", "%B %d, %Y"):
-                try:
-                    return datetime.strptime(str(val).strip(), fmt).date()
-                except ValueError:
-                    continue
-            return None
-
-        last = db.session.query(EPSRecord).order_by(EPSRecord.id.desc()).first()
-        if last and last.code:
-            try:
-                counter = int(last.code.split("__")[-1])
-            except ValueError:
-                counter = 0
-        else:
-            counter = 0
-
-        for r in records:
-            counter += 1
-            year = datetime.now().year
-            new_code = f"EPS{year}__{counter:02d}"
-
-            proc_days = None
-            if r.get("processing_days", "").strip() not in ("", "—"):
-                try:
-                    proc_days = int(float(r["processing_days"]))
-                except ValueError:
-                    pass
-
-            new_record = EPSRecord(
-                code=new_code,
-                process=r.get("process", ""),
-                school=r.get("school", ""),
-                date_received=parse_date(r.get("date_received")),
-                status=r.get("status", ""),
-                date_completed=parse_date(r.get("date_completed")),
-                processing_days=proc_days,
-                remarks=r.get("remarks", ""),
-            )
-            db.session.add(new_record)
-
-        db.session.commit()
-        return jsonify({"success": True})
-
-    except Exception as ex:
-        db.session.rollback()
-        return jsonify({"success": False, "error": str(ex)})
-    
-
-# ── Other section stubs ───────────────────────────────────────────────────────
-
-
-@app.route("/smme")
-def smme():
-    return render_template("smme.html", sections=SECTIONS, active="smme")
-
-@app.route("/pr")
-def pr():
-    return render_template("pr.html", sections=SECTIONS, active="pr")
-
-@app.route("/hrd")
-def hrd():
-    return render_template("hrd.html", sections=SECTIONS, active="hrd")
-
-@app.route("/yf")
-def yf():
-    return render_template("yf.html", sections=SECTIONS, active="yf")
-
-@app.route("/smn")
-def smn():
-    return render_template("smn.html", sections=SECTIONS, active="smn")
-
-@app.route("/shn")
-def shn():
-    return render_template("shn.html", sections=SECTIONS, active="shn")
-
-@app.route("/drrm")
-def drrm():
-    return render_template("drrm.html", sections=SECTIONS, active="drrm")
-
-@app.route("/ef")
-def ef():
-    return render_template("ef.html", sections=SECTIONS, active="ef")
 
 
 # ── Changelog Feedback API Routes ─────────────────────────────────────────────

@@ -303,7 +303,7 @@
     {% set card_colors = ['navy', 'gold', 'teal', 'blue', 'green', 'violet'] %}
     {% for section in sections %}
     <a
-      href="{{ url_for(section.id) }}"
+      href="{{ url_for('section_view', section_key=section.id) }}"
       class="section-card card-color-{{ card_colors[loop.index0 % 6] }}"
     >
       <div class="section-card-header">
