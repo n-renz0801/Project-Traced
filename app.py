@@ -4,6 +4,7 @@ from sqlalchemy import func
 from datetime import date, timedelta
 import holidays
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 app = Flask(__name__)
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
@@ -440,6 +441,71 @@ def ces_delete(record_id):
     db.session.delete(record)
     db.session.commit()
     return redirect(url_for("ces"))
+
+
+@app.route("/ces/import", methods=["POST"])
+def ces_import():
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    data = request.get_json()
+    records = data.get("records", [])
+    if not records:
+        return jsonify({"success": False, "error": "No records provided."})
+
+    try:
+        def parse_date(val):
+            if not val or str(val).strip() in ("", "—", "None"):
+                return None
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%b %d, %Y", "%B %d, %Y"):
+                try:
+                    return datetime.strptime(str(val).strip(), fmt).date()
+                except ValueError:
+                    continue
+            print(f"Warning: could not parse date '{val}'")
+            return None
+
+        # Find the highest existing code number to continue from
+        last = db.session.query(CESRecord).order_by(CESRecord.id.desc()).first()
+        # Extract the numeric suffix from the last code, e.g. "CES2026__47" → 47
+        if last and last.code:
+            try:
+                counter = int(last.code.split("__")[-1])
+            except ValueError:
+                counter = 0
+        else:
+            counter = 0
+
+        for r in records:
+            counter += 1
+            year = datetime.now().year
+            new_code = f"CES{year}__{counter:02d}"
+
+            proc_days = None
+            if r.get("processing_days", "").strip() not in ("", "—"):
+                try:
+                    proc_days = int(float(r["processing_days"]))
+                except ValueError:
+                    pass
+
+            new_record = CESRecord(
+                code=new_code,
+                process=r.get("process", ""),
+                school=r.get("school", ""),
+                date_received=parse_date(r.get("date_received")),
+                status=r.get("status", ""),
+                date_completed=parse_date(r.get("date_completed")),
+                processing_days=proc_days,
+                remarks=r.get("remarks", ""),
+            )
+            db.session.add(new_record)
+
+        db.session.commit()
+        return jsonify({"success": True})
+
+    except Exception as ex:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(ex)})
 
 
 # ── API: compute processing days on-the-fly ───────────────────────────────────

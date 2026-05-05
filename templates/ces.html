@@ -137,6 +137,181 @@
         </div>
       </div>
 
+      <!-- Import -->
+      <div class="import-wrap" id="import-wrap">
+        <button class="import-trigger" id="import-trigger" title="Import CSV">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 5 17 10" />
+            <line x1="12" y1="5" x2="12" y2="15" />
+          </svg>
+          Import
+        </button>
+      </div>
+
+      <!-- Import Modal -->
+      <div
+        class="import-modal-overlay"
+        id="import-modal-overlay"
+        style="display: none"
+      >
+        <div class="import-modal">
+          <div class="import-modal__header">
+            <h3 class="import-modal__title">Import Records from CSV</h3>
+            <button
+              class="import-modal__close"
+              id="import-modal-close"
+              type="button"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="import-modal__body">
+            <div class="import-instructions">
+              <p>
+                Upload a <strong>.csv</strong> file with the following column
+                headers in order:
+              </p>
+              <div class="import-columns">
+                <span class="import-col-badge">Code</span>
+                <span class="import-col-badge">Process</span>
+                <span class="import-col-badge">Name of School</span>
+                <span class="import-col-badge">Date Received</span>
+                <span class="import-col-badge">Status</span>
+                <span class="import-col-badge">Date Completed / Forwarded</span>
+                <span class="import-col-badge">Processing Time (Days)</span>
+                <span class="import-col-badge">Remarks</span>
+              </div>
+              <p class="import-note">
+                Dates are in <code>YYYY-MM-DD</code> format. Processing Days may
+                be blank.
+              </p>
+            </div>
+
+            <label
+              class="import-dropzone"
+              id="import-dropzone"
+              for="import-file-input"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 5 17 10" />
+                <line x1="12" y1="5" x2="12" y2="15" />
+              </svg>
+              <span class="import-dropzone__text" id="import-dropzone-text"
+                >Click to choose a CSV file, or drag and drop here</span
+              >
+              <input
+                type="file"
+                id="import-file-input"
+                accept=".csv"
+                style="display: none"
+              />
+            </label>
+
+            <!-- Preview table -->
+            <div
+              class="import-preview"
+              id="import-preview"
+              style="display: none"
+            >
+              <div class="import-preview__header">
+                <span
+                  class="import-preview__label"
+                  id="import-preview-label"
+                ></span>
+                <button
+                  class="import-preview__clear"
+                  id="import-preview-clear"
+                  type="button"
+                >
+                  Remove file
+                </button>
+              </div>
+              <div class="import-preview__scroll">
+                <table class="import-preview__table" id="import-preview-table">
+                  <thead id="import-preview-thead"></thead>
+                  <tbody id="import-preview-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Error/warning banner -->
+            <div
+              class="import-error"
+              id="import-error"
+              style="display: none"
+            ></div>
+          </div>
+
+          <div class="import-modal__footer">
+            <button
+              class="import-btn-cancel"
+              id="import-btn-cancel"
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              class="import-btn-submit"
+              id="import-btn-submit"
+              type="button"
+              disabled
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 5 17 10" />
+                <line x1="12" y1="5" x2="12" y2="15" />
+              </svg>
+              Import Records
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Add Record -->
       <a href="{{ url_for('ces_add') }}" class="btn-add">
         <svg

@@ -139,7 +139,11 @@ exportDropdown.addEventListener("click", (e) => e.stopPropagation());
 function getTableData() {
   const headers = [...document.querySelectorAll("#ces-table thead th")]
     .slice(0, -1)
-    .map((th) => th.textContent.replace(/\s+/g, " ").trim());
+    .map((th) => {
+      const clone = th.cloneNode(true);
+      clone.querySelectorAll("br").forEach((br) => br.replaceWith(" "));
+      return clone.textContent.replace(/\s+/g, " ").trim();
+    });
 
   const rows = [
     ...document.querySelectorAll(
@@ -151,16 +155,44 @@ function getTableData() {
 
 document.getElementById("export-csv").addEventListener("click", () => {
   const { headers, rows } = getTableData();
-  const escape = (v) => `"${v.replace(/"/g, '""')}"`;
+  const escape = (v) => `"${String(v).replace(/"/g, '""')}"`;
+
   const csvRows = [
     headers.map(escape).join(","),
-    ...rows.map((row) =>
-      [...row.querySelectorAll("td")]
-        .slice(0, -1)
-        .map((td) => escape(td.textContent.replace(/\s+/g, " ").trim()))
-        .join(","),
-    ),
+    ...rows.map((row) => {
+      const cells = [...row.querySelectorAll("td")].slice(0, -1);
+      return cells
+        .map((td, i) => {
+          let val = td.textContent.replace(/\s+/g, " ").trim();
+
+          // Col 3: Date Received — use data-sort (YYYYMMDD) → YYYY-MM-DD
+          if (i === 3) {
+            const raw = td.dataset.sort;
+            val =
+              raw && raw !== "00000000"
+                ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`
+                : "";
+          }
+          // Col 5: Date Completed — same
+          if (i === 5) {
+            const raw = td.dataset.sort;
+            val =
+              raw && raw !== "00000000"
+                ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`
+                : "";
+          }
+          // Col 6: Processing Days — use data-sort, blank if -1
+          if (i === 6) {
+            const raw = td.dataset.sort;
+            val = raw && raw !== "-1" ? raw : "";
+          }
+
+          return escape(val);
+        })
+        .join(",");
+    }),
   ];
+
   downloadFile(csvRows.join("\n"), "text/csv", "ces-records.csv");
   closeExport();
 });
@@ -208,6 +240,239 @@ document.addEventListener("click", (e) => {
     document
       .querySelectorAll(".overflow-menu.open")
       .forEach((m) => m.classList.remove("open"));
+  }
+});
+
+/* ══ 5. IMPORT ══════════════════════════════════════════════════════════ */
+const importTrigger = document.getElementById("import-trigger");
+const importOverlay = document.getElementById("import-modal-overlay");
+const importClose = document.getElementById("import-modal-close");
+const importCancel = document.getElementById("import-btn-cancel");
+const importSubmit = document.getElementById("import-btn-submit");
+const importFileInput = document.getElementById("import-file-input");
+const importDropzone = document.getElementById("import-dropzone");
+const importDropText = document.getElementById("import-dropzone-text");
+const importPreview = document.getElementById("import-preview");
+const importPreviewLbl = document.getElementById("import-preview-label");
+const importPreviewClr = document.getElementById("import-preview-clear");
+const importPreviewThr = document.getElementById("import-preview-thead");
+const importPreviewTbd = document.getElementById("import-preview-tbody");
+const importError = document.getElementById("import-error");
+
+const EXPECTED_HEADERS = [
+  "code",
+  "process",
+  "name of school",
+  "date received",
+  "status",
+  "date completed / forwarded",
+  "processing time (days)",
+  "remarks",
+];
+
+let parsedImportRows = [];
+
+importTrigger.addEventListener("click", () => {
+  importOverlay.style.display = "flex";
+  document.body.style.overflow = "hidden";
+});
+
+function closeImportModal() {
+  importOverlay.style.display = "none";
+  document.body.style.overflow = "";
+  resetImportState();
+}
+
+importClose.addEventListener("click", closeImportModal);
+importCancel.addEventListener("click", closeImportModal);
+importOverlay.addEventListener("click", (e) => {
+  if (e.target === importOverlay) closeImportModal();
+});
+
+function resetImportState() {
+  importFileInput.value = "";
+  importPreview.style.display = "none";
+  importDropzone.style.display = "flex";
+  importDropText.textContent =
+    "Click to choose a CSV file, or drag and drop here";
+  importPreviewThr.innerHTML = "";
+  importPreviewTbd.innerHTML = "";
+  importError.style.display = "none";
+  importError.textContent = "";
+  importSubmit.disabled = true;
+  parsedImportRows = [];
+}
+
+importPreviewClr.addEventListener("click", resetImportState);
+
+/* ── Drag-and-drop ── */
+importDropzone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  importDropzone.classList.add("dragover");
+});
+importDropzone.addEventListener("dragleave", () => {
+  importDropzone.classList.remove("dragover");
+});
+importDropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  importDropzone.classList.remove("dragover");
+  const file = e.dataTransfer.files[0];
+  if (file) handleImportFile(file);
+});
+
+importFileInput.addEventListener("change", () => {
+  if (importFileInput.files[0]) handleImportFile(importFileInput.files[0]);
+});
+
+/* ── CSV parser ── */
+function parseCSV(text) {
+  const lines = text
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .filter((l) => l.trim());
+  const rows = lines.map((line) => {
+    const cells = [];
+    let cur = "",
+      inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuote && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else inQuote = !inQuote;
+      } else if (ch === "," && !inQuote) {
+        cells.push(cur.trim());
+        cur = "";
+      } else {
+        cur += ch;
+      }
+    }
+    cells.push(cur.trim());
+    return cells;
+  });
+  return rows;
+}
+
+function handleImportFile(file) {
+  importError.style.display = "none";
+  importError.textContent = "";
+
+  if (!file.name.endsWith(".csv")) {
+    showImportError("Please upload a .csv file.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const rows = parseCSV(e.target.result);
+    if (rows.length < 2) {
+      showImportError("The file appears to be empty or has no data rows.");
+      return;
+    }
+
+    const headers = rows[0].map((h) =>
+      h.toLowerCase().replace(/\s+/g, " ").trim(),
+    );
+    const missing = EXPECTED_HEADERS.filter((h) => !headers.includes(h));
+    if (missing.length) {
+      showImportError(
+        `Missing required column(s): ${missing.map((m) => `"${m}"`).join(", ")}. Please check the column headers in your CSV.`,
+      );
+      return;
+    }
+
+    /* Map columns by header name so column order doesn't matter */
+    const idx = {};
+    EXPECTED_HEADERS.forEach((h) => {
+      idx[h] = headers.indexOf(h);
+    });
+
+    parsedImportRows = rows
+      .slice(1)
+      .filter((r) => r.some((c) => c))
+      .map((r) => ({
+        code: r[idx["code"]] || "",
+        process: r[idx["process"]] || "",
+        school: r[idx["name of school"]] || "",
+        date_received: r[idx["date received"]] || "",
+        status: r[idx["status"]] || "",
+        date_completed: r[idx["date completed / forwarded"]] || "",
+        processing_days: r[idx["processing time (days)"]] || "",
+        remarks: r[idx["remarks"]] || "",
+      }));
+
+    if (!parsedImportRows.length) {
+      showImportError("No data rows found in the file.");
+      return;
+    }
+
+    /* Show preview */
+    importDropzone.style.display = "none";
+    importPreview.style.display = "block";
+    importPreviewLbl.textContent = `${parsedImportRows.length} row${parsedImportRows.length !== 1 ? "s" : ""} ready to import from "${file.name}"`;
+
+    importPreviewThr.innerHTML = `<tr>${["Code", "Process", "School", "Date Received", "Status", "Date Completed", "Processing Days", "Remarks"].map((h) => `<th>${h}</th>`).join("")}</tr>`;
+
+    importPreviewTbd.innerHTML =
+      parsedImportRows
+        .slice(0, 10)
+        .map(
+          (r) => `
+      <tr>
+        <td>${r.code}</td>
+        <td>${r.process}</td>
+        <td>${r.school}</td>
+        <td>${r.date_received}</td>
+        <td>${r.status}</td>
+        <td>${r.date_completed}</td>
+        <td>${r.processing_days}</td>
+        <td>${r.remarks}</td>
+      </tr>`,
+        )
+        .join("") +
+      (parsedImportRows.length > 10
+        ? `<tr><td colspan="8" class="import-preview__more">… and ${parsedImportRows.length - 10} more row(s)</td></tr>`
+        : "");
+
+    importSubmit.disabled = false;
+  };
+  reader.readAsText(file);
+}
+
+function showImportError(msg) {
+  importError.textContent = msg;
+  importError.style.display = "block";
+  importSubmit.disabled = true;
+}
+
+/* ── Submit to server ── */
+importSubmit.addEventListener("click", async () => {
+  importSubmit.disabled = true;
+  importSubmit.textContent = "Importing…";
+
+  try {
+    const res = await fetch("/ces/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ records: parsedImportRows }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      closeImportModal();
+      location.reload();
+    } else {
+      showImportError(data.error || "Import failed. Please try again.");
+      importSubmit.disabled = false;
+      importSubmit.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="15"/></svg> Import Records`;
+    }
+  } catch {
+    showImportError(
+      "Network error. Please check your connection and try again.",
+    );
+    importSubmit.disabled = false;
   }
 });
 
