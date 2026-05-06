@@ -205,14 +205,33 @@
                 headers:
               </p>
               <div class="import-columns">
-                <span class="import-col-badge">Code</span>
-                <span class="import-col-badge">Process</span>
-                <span class="import-col-badge">Name of School</span>
-                <span class="import-col-badge">Date Received</span>
-                <span class="import-col-badge">Status</span>
-                <span class="import-col-badge">Date Completed / Forwarded</span>
-                <span class="import-col-badge">Processing Time (Days)</span>
-                <span class="import-col-badge">Remarks</span>
+                {% if section_key == 'hrd' %}
+                  <span class="import-col-badge">Code</span>
+                  <span class="import-col-badge">Process</span>
+                  <span class="import-col-badge">Name of School</span>
+                  <span class="import-col-badge">Title</span>
+                  <span class="import-col-badge">Implementation Date Start</span>
+                  <span class="import-col-badge">Implementation Date End</span>
+                  <span class="import-col-badge">Venue</span>
+                  <span class="import-col-badge">Participants M</span>
+                  <span class="import-col-badge">Participants F</span>
+                  <span class="import-col-badge">Date Received</span>
+                  <span class="import-col-badge">Status</span>
+                  <span class="import-col-badge">Date Completed / Forwarded</span>
+                  <span class="import-col-badge">Processing Time (Days)</span>
+                  <span class="import-col-badge">Evaluation Rating</span>
+                  <span class="import-col-badge">Topic/Matrix</span>
+                  <span class="import-col-badge">Remarks</span>
+                {% else %}
+                  <span class="import-col-badge">Code</span>
+                  <span class="import-col-badge">Process</span>
+                  <span class="import-col-badge">Name of School</span>
+                  <span class="import-col-badge">Date Received</span>
+                  <span class="import-col-badge">Status</span>
+                  <span class="import-col-badge">Date Completed / Forwarded</span>
+                  <span class="import-col-badge">Processing Time (Days)</span>
+                  <span class="import-col-badge">Remarks</span>
+                {% endif %}
               </div>
               <p class="import-note">
                 Dates are in <code>YYYY-MM-DD</code> format. Processing Days may
@@ -543,20 +562,29 @@
           <td>{{ r.school }}</td>
 
           {% if section_key == 'hrd' %}
-          <td>{{ r.hrd_title or '—' }}</td>
-          <td class="impl-date-cell">
+          <td data-export="{{ r.hrd_title or '' }}">
+            {{ r.hrd_title or '—' }}
+          </td>
+          <td class="impl-date-cell"
+              data-export-start="{{ r.hrd_impl_date_start.isoformat() if r.hrd_impl_date_start else '' }}"
+              data-export-end="{{ r.hrd_impl_date_end.isoformat() if r.hrd_impl_date_end else '' }}">
             {% if r.hrd_impl_date_start and r.hrd_impl_date_end %}
               {% if r.hrd_impl_date_start.month == r.hrd_impl_date_end.month and r.hrd_impl_date_start.year == r.hrd_impl_date_end.year %}
-                {{ r.hrd_impl_date_start.strftime('%b %-d') }}–{{ r.hrd_impl_date_end.strftime('%-d, %Y') }}
+                {{ r.hrd_impl_date_start.strftime('%b') }} {{ r.hrd_impl_date_start.day }}–{{ r.hrd_impl_date_end.day }}, {{ r.hrd_impl_date_end.year }}
               {% else %}
-                {{ r.hrd_impl_date_start.strftime('%b %-d') }} – {{ r.hrd_impl_date_end.strftime('%b %-d, %Y') }}
+                {{ r.hrd_impl_date_start.strftime('%b') }} {{ r.hrd_impl_date_start.day }} – {{ r.hrd_impl_date_end.strftime('%b') }} {{ r.hrd_impl_date_end.day }}, {{ r.hrd_impl_date_end.year }}
               {% endif %}
             {% elif r.hrd_impl_date_start %}
               {{ r.hrd_impl_date_start.strftime('%b %-d, %Y') }}
             {% else %}—{% endif %}
           </td>
-          <td>{{ r.hrd_venue or '—' }}</td>
-          <td class="participants-cell">
+          <td data-export="{{ r.hrd_venue or '' }}">
+            {{ r.hrd_venue or '—' }}
+          </td>
+          <td class="participants-cell"
+              data-export-m="{{ r.hrd_participants_m if r.hrd_participants_m is not none else '' }}"
+              data-export-f="{{ r.hrd_participants_f if r.hrd_participants_f is not none else '' }}"
+              data-export-t="{{ (r.hrd_participants_m or 0) + (r.hrd_participants_f or 0) if (r.hrd_participants_m is not none or r.hrd_participants_f is not none) else '' }}">
             {% set m = r.hrd_participants_m %}
             {% set f = r.hrd_participants_f %}
             {% set t = (m or 0) + (f or 0) if (m is not none or f is not none) else none %}
@@ -566,10 +594,10 @@
               <span class="participants-total">{{ t if t is not none else '—' }}</span>
             </div>
           </td>
-          <td class="eval-cell">
+          <td class="eval-cell" data-export="{{ '%.2f'|format(r.hrd_eval_rating|float) if r.hrd_eval_rating is not none else '' }}">
             {{ '%.2f'|format(r.hrd_eval_rating|float) if r.hrd_eval_rating is not none else '—' }}
           </td>
-          <td class="topic-matrix-cell">
+          <td class="topic-matrix-cell" data-export="{{ r.hrd_topic_matrix or '' }}">
             {% if r.hrd_topic_matrix %}
               <div class="topic-matrix-content">{{ r.hrd_topic_matrix }}</div>
             {% else %}—{% endif %}

@@ -669,7 +669,8 @@ def section_import(section_key):
                     proc_days = int(float(raw_days))
                 except ValueError:
                     pass
-            db.session.add(SectionRecord(
+
+            record = SectionRecord(
                 section         = section_key,
                 code            = new_code,
                 process         = r.get('process', ''),
@@ -679,7 +680,33 @@ def section_import(section_key):
                 date_completed  = parse_date(r.get('date_completed')),
                 processing_days = proc_days,
                 remarks         = r.get('remarks', ''),
-            ))
+            )
+
+            # ── HRD-only fields ──────────────────────────────────────────
+            if section_key == 'hrd':
+                def safe_int(val):
+                    try:
+                        return int(float(val)) if str(val).strip() not in ('', '—') else None
+                    except (ValueError, TypeError):
+                        return None
+
+                def safe_float(val):
+                    try:
+                        return float(val) if str(val).strip() not in ('', '—') else None
+                    except (ValueError, TypeError):
+                        return None
+
+                record.hrd_title           = r.get('title', '')
+                record.hrd_impl_date_start = parse_date(r.get('impl_date_start'))
+                record.hrd_impl_date_end   = parse_date(r.get('impl_date_end'))
+                record.hrd_venue           = r.get('venue', '')
+                record.hrd_participants_m  = safe_int(r.get('participants_m'))
+                record.hrd_participants_f  = safe_int(r.get('participants_f'))
+                record.hrd_eval_rating     = safe_float(r.get('eval_rating'))
+                record.hrd_topic_matrix    = r.get('topic_matrix', '')
+
+            db.session.add(record)
+
         db.session.commit()
         return jsonify({'success': True})
     except Exception as ex:

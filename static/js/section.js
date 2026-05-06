@@ -31,6 +31,16 @@ function updateFooter() {
   }
 }
 
+// Safely escape values before inserting into innerHTML
+function escapeHtml(v) {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/\n/g, " · "); // flatten newlines for preview readability
+}
+
 searchInput.addEventListener("input", () => {
   const q = searchInput.value.trim().toLowerCase();
   searchClear.style.display = q ? "flex" : "none";
@@ -144,33 +154,119 @@ function getTableData() {
 }
 
 document.getElementById("export-csv").addEventListener("click", () => {
-  const { headers, rows, hasCheckbox } = getTableData();
-  const escape = (v) => `"${String(v).replace(/"/g, '""')}"`;
-  const colOffset = hasCheckbox ? 1 : 0;
-  const csvRows = [
-    headers.map(escape).join(","),
-    ...rows.map((row) => {
-      const cells = [...row.querySelectorAll("td")].slice(colOffset, -1);
-      return cells
-        .map((td, i) => {
-          let val = td.textContent.replace(/\s+/g, " ").trim();
-          if (i === 3 || i === 5) {
-            const raw = td.dataset.sort;
-            val =
-              raw && raw !== "00000000"
-                ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`
-                : "";
-          }
-          if (i === 6) {
-            const raw = td.dataset.sort;
-            val = raw && raw !== "-1" ? raw : "";
-          }
-          return escape(val);
-        })
-        .join(",");
-    }),
-  ];
-  downloadFile(csvRows.join("\n"), "text/csv", EXPORT_FILENAME);
+  const escape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+
+  if (SECTION === "hrd") {
+    // ── HRD export: reads data-export-* attributes ──────────────────
+    const headers = [
+      "Code",
+      "Process",
+      "Name of School",
+      "Title",
+      "Implementation Date Start",
+      "Implementation Date End",
+      "Venue",
+      "Participants M",
+      "Participants F",
+      "Participants T",
+      "Evaluation Rating",
+      "Topic/Matrix",
+      "Date Received",
+      "Status",
+      "Date Completed / Forwarded",
+      "Processing Time (Days)",
+      "Remarks",
+    ];
+
+    const rows = [
+      ...document.querySelectorAll(
+        "#section-tbody tr:not(.empty-placeholder):not(.row-hidden)",
+      ),
+    ];
+
+    const csvRows = [
+      headers.map(escape).join(","),
+      ...rows.map((row) => {
+        const cells = [...row.querySelectorAll("td")];
+        // Remove checkbox cell if present
+        const hasCheckbox = !!document.getElementById("select-all-checkbox");
+        const c = hasCheckbox ? cells.slice(1) : cells;
+        // c indices (after removing checkbox + actions last col):
+        // 0=code, 1=process, 2=school, 3=title,
+        // 4=impl_date, 5=venue, 6=participants, 7=eval, 8=topic_matrix,
+        // 9=date_received, 10=status, 11=date_completed, 12=days, 13=remarks
+        const implDate = c[4];
+        const partCell = c[6];
+        const dateRec = c[9];
+        const dateComp = c[11];
+        const daysCell = c[12];
+
+        const toDate = (cell) => {
+          const s = cell?.dataset.sort;
+          return s && s !== "00000000"
+            ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`
+            : "";
+        };
+
+        return [
+          c[0].textContent.trim(), // Code
+          c[1].textContent.trim(), // Process
+          c[2].textContent.trim(), // School
+          c[3]?.dataset.export ?? "", // Title
+          implDate?.dataset.exportStart ?? "", // Impl Date Start
+          implDate?.dataset.exportEnd ?? "", // Impl Date End
+          c[5]?.dataset.export ?? "", // Venue
+          partCell?.dataset.exportM ?? "", // Participants M
+          partCell?.dataset.exportF ?? "", // Participants F
+          partCell?.dataset.exportT ?? "", // Participants T
+          c[7]?.dataset.export ?? "", // Eval Rating
+          c[8]?.dataset.export ?? "", // Topic/Matrix
+          toDate(dateRec), // Date Received
+          c[10].textContent.trim(), // Status
+          toDate(dateComp), // Date Completed
+          (() => {
+            const s = daysCell?.dataset.sort;
+            return s && s !== "-1" ? s : "";
+          })(), // Days
+          c[13]?.textContent.trim() ?? "", // Remarks
+        ]
+          .map(escape)
+          .join(",");
+      }),
+    ];
+
+    downloadFile(csvRows.join("\n"), "text/csv", EXPORT_FILENAME);
+  } else {
+    // ── Standard export (unchanged) ─────────────────────────────────
+    const { headers, rows, hasCheckbox } = getTableData();
+    const escape2 = (v) => `"${String(v).replace(/"/g, '""')}"`;
+    const colOffset = hasCheckbox ? 1 : 0;
+    const csvRows = [
+      headers.map(escape2).join(","),
+      ...rows.map((row) => {
+        const cells = [...row.querySelectorAll("td")].slice(colOffset, -1);
+        return cells
+          .map((td, i) => {
+            let val = td.textContent.replace(/\s+/g, " ").trim();
+            if (i === 3 || i === 5) {
+              const raw = td.dataset.sort;
+              val =
+                raw && raw !== "00000000"
+                  ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`
+                  : "";
+            }
+            if (i === 6) {
+              const raw = td.dataset.sort;
+              val = raw && raw !== "-1" ? raw : "";
+            }
+            return escape2(val);
+          })
+          .join(",");
+      }),
+    ];
+    downloadFile(csvRows.join("\n"), "text/csv", EXPORT_FILENAME);
+  }
+
   closeExport();
 });
 
@@ -234,16 +330,37 @@ const importPreviewThr = document.getElementById("import-preview-thead");
 const importPreviewTbd = document.getElementById("import-preview-tbody");
 const importError = document.getElementById("import-error");
 
-const EXPECTED_HEADERS = [
-  "code",
-  "process",
-  "name of school",
-  "date received",
-  "status",
-  "date completed / forwarded",
-  "processing time (days)",
-  "remarks",
-];
+// Section-aware expected import headers
+const EXPECTED_HEADERS =
+  SECTION === "hrd"
+    ? [
+        "code",
+        "process",
+        "name of school",
+        "title",
+        "implementation date start",
+        "implementation date end",
+        "venue",
+        "participants m",
+        "participants f",
+        "date received",
+        "status",
+        "date completed / forwarded",
+        "processing time (days)",
+        "evaluation rating",
+        "topic/matrix",
+        "remarks",
+      ]
+    : [
+        "code",
+        "process",
+        "name of school",
+        "date received",
+        "status",
+        "date completed / forwarded",
+        "processing time (days)",
+        "remarks",
+      ];
 
 let parsedImportRows = [];
 
@@ -298,32 +415,54 @@ importFileInput.addEventListener("change", () => {
 });
 
 function parseCSV(text) {
-  const lines = text
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .split("\n")
-    .filter((l) => l.trim());
-  return lines.map((line) => {
-    const cells = [];
-    let cur = "",
-      inQuote = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') {
-        if (inQuote && line[i + 1] === '"') {
-          cur += '"';
-          i++;
-        } else inQuote = !inQuote;
-      } else if (ch === "," && !inQuote) {
-        cells.push(cur.trim());
-        cur = "";
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+
+  // Normalize line endings
+  const t = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    const next = t[i + 1];
+
+    if (inQuotes) {
+      if (ch === '"' && next === '"') {
+        // Escaped double-quote inside a quoted field → literal "
+        field += '"';
+        i++;
+      } else if (ch === '"') {
+        // Closing quote
+        inQuotes = false;
       } else {
-        cur += ch;
+        // Everything else inside quotes, including newlines, is part of the field
+        field += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true; // Opening quote
+      } else if (ch === ",") {
+        row.push(field.trim()); // End of field
+        field = "";
+      } else if (ch === "\n") {
+        row.push(field.trim()); // End of row
+        field = "";
+        if (row.some((c) => c !== "")) rows.push(row);
+        row = [];
+      } else {
+        field += ch;
       }
     }
-    cells.push(cur.trim());
-    return cells;
-  });
+  }
+
+  // Flush the last field / row
+  if (field || row.length > 0) {
+    row.push(field.trim());
+    if (row.some((c) => c !== "")) rows.push(row);
+  }
+
+  return rows;
 }
 
 function handleImportFile(file) {
@@ -353,19 +492,43 @@ function handleImportFile(file) {
     EXPECTED_HEADERS.forEach((h) => {
       idx[h] = headers.indexOf(h);
     });
-    parsedImportRows = rows
-      .slice(1)
-      .filter((r) => r.some((c) => c))
-      .map((r) => ({
-        code: r[idx["code"]] || "",
-        process: r[idx["process"]] || "",
-        school: r[idx["name of school"]] || "",
-        date_received: r[idx["date received"]] || "",
-        status: r[idx["status"]] || "",
-        date_completed: r[idx["date completed / forwarded"]] || "",
-        processing_days: r[idx["processing time (days)"]] || "",
-        remarks: r[idx["remarks"]] || "",
-      }));
+    // Build parsedImportRows — branch for HRD
+    if (SECTION === "hrd") {
+      parsedImportRows = rows
+        .slice(1)
+        .filter((r) => r.some((c) => c))
+        .map((r) => ({
+          process: r[idx["process"]] || "",
+          school: r[idx["name of school"]] || "",
+          title: r[idx["title"]] || "",
+          impl_date_start: r[idx["implementation date start"]] || "",
+          impl_date_end: r[idx["implementation date end"]] || "",
+          venue: r[idx["venue"]] || "",
+          participants_m: r[idx["participants m"]] || "",
+          participants_f: r[idx["participants f"]] || "",
+          date_received: r[idx["date received"]] || "",
+          status: r[idx["status"]] || "",
+          date_completed: r[idx["date completed / forwarded"]] || "",
+          processing_days: r[idx["processing time (days)"]] || "",
+          eval_rating: r[idx["evaluation rating"]] || "",
+          topic_matrix: r[idx["topic/matrix"]] || "",
+          remarks: r[idx["remarks"]] || "",
+        }));
+    } else {
+      parsedImportRows = rows
+        .slice(1)
+        .filter((r) => r.some((c) => c))
+        .map((r) => ({
+          code: r[idx["code"]] || "",
+          process: r[idx["process"]] || "",
+          school: r[idx["name of school"]] || "",
+          date_received: r[idx["date received"]] || "",
+          status: r[idx["status"]] || "",
+          date_completed: r[idx["date completed / forwarded"]] || "",
+          processing_days: r[idx["processing time (days)"]] || "",
+          remarks: r[idx["remarks"]] || "",
+        }));
+    }
     if (!parsedImportRows.length) {
       showImportError("No data rows found in the file.");
       return;
@@ -373,17 +536,77 @@ function handleImportFile(file) {
     importDropzone.style.display = "none";
     importPreview.style.display = "block";
     importPreviewLbl.textContent = `${parsedImportRows.length} row${parsedImportRows.length !== 1 ? "s" : ""} ready to import from "${file.name}"`;
-    importPreviewThr.innerHTML = `<tr>${["Code", "Process", "School", "Date Received", "Status", "Date Completed", "Processing Days", "Remarks"].map((h) => `<th>${h}</th>`).join("")}</tr>`;
+
+    const previewHeaders =
+      SECTION === "hrd"
+        ? [
+            "Process",
+            "School",
+            "Title",
+            "Impl Start",
+            "Impl End",
+            "Venue",
+            "M",
+            "F",
+            "Date Received",
+            "Status",
+            "Date Completed",
+            "Days",
+            "Eval",
+            "Topic/Matrix",
+            "Remarks",
+          ]
+        : [
+            "Code",
+            "Process",
+            "School",
+            "Date Received",
+            "Status",
+            "Date Completed",
+            "Processing Days",
+            "Remarks",
+          ];
+
+    importPreviewThr.innerHTML = `<tr>${previewHeaders.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr>`;
+
     importPreviewTbd.innerHTML =
       parsedImportRows
         .slice(0, 10)
-        .map(
-          (r) =>
-            `<tr><td>${r.code}</td><td>${r.process}</td><td>${r.school}</td><td>${r.date_received}</td><td>${r.status}</td><td>${r.date_completed}</td><td>${r.processing_days}</td><td>${r.remarks}</td></tr>`,
-        )
+        .map((r) => {
+          const cells =
+            SECTION === "hrd"
+              ? [
+                  r.process,
+                  r.school,
+                  r.title,
+                  r.impl_date_start,
+                  r.impl_date_end,
+                  r.venue,
+                  r.participants_m,
+                  r.participants_f,
+                  r.date_received,
+                  r.status,
+                  r.date_completed,
+                  r.processing_days,
+                  r.eval_rating,
+                  r.topic_matrix,
+                  r.remarks,
+                ]
+              : [
+                  r.code,
+                  r.process,
+                  r.school,
+                  r.date_received,
+                  r.status,
+                  r.date_completed,
+                  r.processing_days,
+                  r.remarks,
+                ];
+          return `<tr>${cells.map((v) => `<td>${escapeHtml(v)}</td>`).join("")}</tr>`;
+        })
         .join("") +
       (parsedImportRows.length > 10
-        ? `<tr><td colspan="8" class="import-preview__more">… and ${parsedImportRows.length - 10} more row(s)</td></tr>`
+        ? `<tr><td colspan="${SECTION === "hrd" ? 15 : 8}" class="import-preview__more">… and ${parsedImportRows.length - 10} more row(s)</td></tr>`
         : "");
     importSubmit.disabled = false;
   };
