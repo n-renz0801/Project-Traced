@@ -267,6 +267,18 @@ CHANGELOG = [
         "entries": [
             {
             "tag": "feat",
+            "text": "Imported bulk data from Excel file into the system"
+            },
+            {
+            "tag": "improve",
+            "text": "Updated import and export functionality in the HRD section"
+            },
+            {
+            "tag": "improve",
+            "text": "Updated table of the HRD section"
+            },
+            {
+            "tag": "feat",
             "text": "Restricted changelog access to superadmin and authorized user (Jho) only"
             },
             {
