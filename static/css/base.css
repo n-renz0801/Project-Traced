@@ -1932,3 +1932,67 @@ tr.row-selected td {
 .spin-icon {
   animation: spin 0.8s linear infinite;
 }
+
+/* ── HRD table column styles ─────────────────────────────────────────────── */
+.col-participants {
+  text-align: center;
+  min-width: 120px;
+}
+
+.participants-subheader {
+  display: flex;
+  justify-content: space-around;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 3px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 3px;
+}
+
+.participants-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.participants-total {
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.participants-cell {
+  padding: 8px 6px !important;
+  min-width: 110px;
+}
+
+.eval-cell {
+  text-align: center;
+  font-weight: 600;
+  color: #0f766e;
+}
+
+.col-topic {
+  min-width: 200px;
+}
+
+.topic-matrix-cell {
+  min-width: 180px;
+  max-width: 280px;
+}
+
+.topic-matrix-content {
+  white-space: pre-wrap; /* preserves line breaks from the textarea */
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: #374151;
+  font-family: "Poppins", sans-serif;
+}
+
+.impl-date-cell {
+  white-space: nowrap;
+  font-size: 0.82rem;
+}

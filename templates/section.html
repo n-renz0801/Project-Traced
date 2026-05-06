@@ -488,6 +488,25 @@
           <th class="sortable" data-col="2" data-type="text">
             Name of<br />School <span class="sort-indicator"></span>
           </th>
+
+          {% if section_key == 'hrd' %}
+          <th class="sortable" data-col="hrd-title" data-type="text">
+            Title <span class="sort-indicator"></span>
+          </th>
+          <th>Implementation<br />Date</th>
+          <th>Venue</th>
+          <th class="col-participants">
+            No. of Participants
+            <div class="participants-subheader">
+              <span>M</span><span>F</span><span>T</span>
+            </div>
+          </th>
+          <th class="sortable" data-col="hrd-eval" data-type="number">
+            Evaluation<br />Rating <span class="sort-indicator"></span>
+          </th>
+          <th class="col-topic">Topic / Matrix</th>
+          {% endif %}
+
           <th class="sortable" data-col="3" data-type="date">
             Date<br />Received <span class="sort-indicator"></span>
           </th>
@@ -522,6 +541,41 @@
           <td><span class="code-badge">{{ r.code }}</span></td>
           <td>{{ r.process }}</td>
           <td>{{ r.school }}</td>
+
+          {% if section_key == 'hrd' %}
+          <td>{{ r.hrd_title or '—' }}</td>
+          <td class="impl-date-cell">
+            {% if r.hrd_impl_date_start and r.hrd_impl_date_end %}
+              {% if r.hrd_impl_date_start.month == r.hrd_impl_date_end.month and r.hrd_impl_date_start.year == r.hrd_impl_date_end.year %}
+                {{ r.hrd_impl_date_start.strftime('%b %-d') }}–{{ r.hrd_impl_date_end.strftime('%-d, %Y') }}
+              {% else %}
+                {{ r.hrd_impl_date_start.strftime('%b %-d') }} – {{ r.hrd_impl_date_end.strftime('%b %-d, %Y') }}
+              {% endif %}
+            {% elif r.hrd_impl_date_start %}
+              {{ r.hrd_impl_date_start.strftime('%b %-d, %Y') }}
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ r.hrd_venue or '—' }}</td>
+          <td class="participants-cell">
+            {% set m = r.hrd_participants_m %}
+            {% set f = r.hrd_participants_f %}
+            {% set t = (m or 0) + (f or 0) if (m is not none or f is not none) else none %}
+            <div class="participants-grid">
+              <span>{{ m if m is not none else '—' }}</span>
+              <span>{{ f if f is not none else '—' }}</span>
+              <span class="participants-total">{{ t if t is not none else '—' }}</span>
+            </div>
+          </td>
+          <td class="eval-cell">
+            {{ '%.2f'|format(r.hrd_eval_rating|float) if r.hrd_eval_rating is not none else '—' }}
+          </td>
+          <td class="topic-matrix-cell">
+            {% if r.hrd_topic_matrix %}
+              <div class="topic-matrix-content">{{ r.hrd_topic_matrix }}</div>
+            {% else %}—{% endif %}
+          </td>
+          {% endif %}
+
           <td
             data-sort="{{ r.date_received.strftime('%Y%m%d') if r.date_received else '00000000' }}"
           >
@@ -630,7 +684,7 @@
         </tr>
         {% endfor %} {% else %}
         <tr id="empty-row">
-          <td colspan="10" class="empty-row">
+          <td colspan="{% if section_key == 'hrd' %}17{% else %}10{% endif %}" class="empty-row">
             <div class="empty-state">
               <svg
                 xmlns="http://www.w3.org/2000/svg"

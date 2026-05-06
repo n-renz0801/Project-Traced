@@ -81,6 +81,140 @@
       </div>
     </div>
 
+    {% if section_key == 'hrd' %}
+
+    <!-- HRD: Title -->
+    <div class="form-group">
+      <label for="hrd_title">Title</label>
+      <input
+        type="text"
+        id="hrd_title"
+        name="hrd_title"
+        class="date-input"
+        placeholder="Enter training/activity title…"
+        value="{{ record.hrd_title if record and record.hrd_title else '' }}"
+      />
+    </div>
+
+    <!-- HRD: Implementation Date (range) -->
+    <div class="form-group">
+      <label>Implementation Date</label>
+      <div class="date-range-wrap">
+        <div class="date-range-field">
+          <span class="date-range-label">Start</span>
+          <input
+            type="date"
+            id="hrd_impl_date_start"
+            name="hrd_impl_date_start"
+            class="date-input"
+            value="{{ record.hrd_impl_date_start.isoformat() if record and record.hrd_impl_date_start else '' }}"
+          />
+        </div>
+        <span class="date-range-sep">—</span>
+        <div class="date-range-field">
+          <span class="date-range-label">End</span>
+          <input
+            type="date"
+            id="hrd_impl_date_end"
+            name="hrd_impl_date_end"
+            class="date-input"
+            value="{{ record.hrd_impl_date_end.isoformat() if record and record.hrd_impl_date_end else '' }}"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- HRD: Venue -->
+    <div class="form-group">
+      <label for="hrd_venue">Venue</label>
+      <input
+        type="text"
+        id="hrd_venue"
+        name="hrd_venue"
+        class="date-input"
+        placeholder="Enter venue…"
+        value="{{ record.hrd_venue if record and record.hrd_venue else '' }}"
+      />
+    </div>
+
+    <!-- HRD: Participants -->
+    <div class="form-group">
+      <label>No. of Participants</label>
+      <div class="participants-inputs">
+        <div class="participant-field">
+          <span class="participant-label">M</span>
+          <input
+            type="number"
+            id="hrd_participants_m"
+            name="hrd_participants_m"
+            class="date-input participant-input"
+            min="0"
+            placeholder="0"
+            value="{{ record.hrd_participants_m if record and record.hrd_participants_m is not none else '' }}"
+            oninput="updateParticipantsTotal()"
+          />
+        </div>
+        <div class="participant-field">
+          <span class="participant-label">F</span>
+          <input
+            type="number"
+            id="hrd_participants_f"
+            name="hrd_participants_f"
+            class="date-input participant-input"
+            min="0"
+            placeholder="0"
+            value="{{ record.hrd_participants_f if record and record.hrd_participants_f is not none else '' }}"
+            oninput="updateParticipantsTotal()"
+          />
+        </div>
+        <div class="participant-field participant-field--total">
+          <span class="participant-label">T</span>
+          <div class="participant-total-display" id="participant-total">
+            {% if record and record.hrd_participants_m is not none and
+            record.hrd_participants_f is not none %} {{
+            (record.hrd_participants_m or 0) + (record.hrd_participants_f or 0)
+            }} {% else %}—{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HRD: Evaluation Rating -->
+    <div class="form-group">
+      <label for="hrd_eval_rating">Evaluation Rating</label>
+      <input
+        type="number"
+        id="hrd_eval_rating"
+        name="hrd_eval_rating"
+        class="date-input"
+        min="0"
+        max="5"
+        step="0.01"
+        placeholder="e.g. 4.75"
+        value="{{ '%.2f'|format(record.hrd_eval_rating|float) if record and record.hrd_eval_rating is not none else '' }}"
+      />
+    </div>
+
+    <!-- HRD: Topic/Matrix (full width) -->
+    <div class="form-group full-width">
+      <label for="hrd_topic_matrix">Topic / Matrix</label>
+      <textarea
+        id="hrd_topic_matrix"
+        name="hrd_topic_matrix"
+        class="textarea-input topic-matrix-textarea"
+        rows="6"
+        placeholder="e.g.&#10;1. Introduction&#10;2. Session A&#10;   a. Sub-topic&#10;Phase 1: Planning&#10;Phase 2: Implementation"
+      >
+{{ record.hrd_topic_matrix if record and record.hrd_topic_matrix else '' }}</textarea
+      >
+      <p class="field-hint">
+        Supports numbered lists, lettered items, or Phase labels. Each line is
+        displayed as a separate entry.
+      </p>
+    </div>
+
+    {% endif %}
+
     <!-- Date Received -->
     <div class="form-group">
       <label for="date_received"
@@ -199,4 +333,17 @@
   href="{{ url_for('static', filename='css/section_form.css') }}"
 />
 <script src="{{ url_for('static', filename='js/ces_form.js') }}"></script>
-{% endblock %}
+{% if section_key == 'hrd' %}
+<script>
+  function updateParticipantsTotal() {
+    const m =
+      parseInt(document.getElementById("hrd_participants_m").value) || 0;
+    const f =
+      parseInt(document.getElementById("hrd_participants_f").value) || 0;
+    const mVal = document.getElementById("hrd_participants_m").value;
+    const fVal = document.getElementById("hrd_participants_f").value;
+    const el = document.getElementById("participant-total");
+    el.textContent = mVal === "" && fVal === "" ? "—" : m + f;
+  }
+</script>
+{% endif %} {% endblock %}

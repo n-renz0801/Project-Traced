@@ -3,36 +3,33 @@ from sqlalchemy import text
 
 with app.app_context():
     try:
-        # Create all tables that don't exist yet (including section_records)
-        db.create_all()
-        print("Tables created/verified.")
-
-        # Check counts before migrating
-        ces_count = db.session.execute(text("SELECT COUNT(*) FROM ces_records")).scalar()
-        eps_count = db.session.execute(text("SELECT COUNT(*) FROM eps_records")).scalar()
-        print(f"Found {ces_count} CES records and {eps_count} EPS records to migrate.")
-
         db.session.execute(text("""
-            INSERT INTO section_records (section, code, process, school, date_received, status, date_completed, processing_days, remarks)
-            SELECT 'ces', code, process, school, date_received, status, date_completed, processing_days, remarks
-            FROM ces_records
-        """))
-
-        db.session.execute(text("""
-            INSERT INTO section_records (section, code, process, school, date_received, status, date_completed, processing_days, remarks)
-            SELECT 'eps', code, process, school, date_received, status, date_completed, processing_days, remarks
-            FROM eps_records
+            ALTER TABLE section_records
+              ADD COLUMN IF NOT EXISTS hrd_title           VARCHAR(300),
+              ADD COLUMN IF NOT EXISTS hrd_impl_date_start DATE,
+              ADD COLUMN IF NOT EXISTS hrd_impl_date_end   DATE,
+              ADD COLUMN IF NOT EXISTS hrd_venue           VARCHAR(300),
+              ADD COLUMN IF NOT EXISTS hrd_participants_m  INTEGER,
+              ADD COLUMN IF NOT EXISTS hrd_participants_f  INTEGER,
+              ADD COLUMN IF NOT EXISTS hrd_eval_rating     NUMERIC(4,2),
+              ADD COLUMN IF NOT EXISTS hrd_topic_matrix    TEXT;
         """))
 
         db.session.commit()
+        print("HRD columns added successfully.")
 
-        # Verify
-        result = db.session.execute(text(
-            "SELECT section, COUNT(*) as count FROM section_records GROUP BY section"
-        )).fetchall()
-        print("Migration successful! section_records now contains:")
+        # Verify the columns exist
+        result = db.session.execute(text("""
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'section_records'
+              AND column_name LIKE 'hrd_%'
+            ORDER BY column_name;
+        """)).fetchall()
+
+        print("HRD columns in section_records:")
         for row in result:
-            print(f"  {row[0]}: {row[1]} records")
+            print(f"  {row[0]}: {row[1]}")
 
     except Exception as e:
         db.session.rollback()

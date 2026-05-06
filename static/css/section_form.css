@@ -224,3 +224,85 @@ label {
     grid-column: 1;
   }
 }
+
+/* ── HRD: Date Range ─────────────────────────────────────────────────────── */
+.date-range-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.date-range-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.date-range-sep {
+  font-size: 1.1rem;
+  color: #9ca3af;
+  padding-top: 1.2rem;
+  flex-shrink: 0;
+}
+
+/* ── HRD: Participants ───────────────────────────────────────────────────── */
+.participants-inputs {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.participant-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.participant-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.participant-input {
+  text-align: center;
+}
+
+.participant-field--total .participant-label {
+  color: #0033a0;
+}
+
+.participant-total-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.85rem;
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1d4ed8;
+  min-height: 2.45rem;
+}
+
+/* ── HRD: Topic/Matrix textarea ─────────────────────────────────────────── */
+.topic-matrix-textarea {
+  font-family: "Poppins", monospace;
+  font-size: 0.82rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}

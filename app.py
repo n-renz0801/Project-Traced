@@ -28,7 +28,7 @@ class SectionRecord(db.Model):
     __tablename__ = 'section_records'
 
     id              = db.Column(db.Integer, primary_key=True)
-    section         = db.Column(db.String(20), nullable=False, index=True)  # 'ces', 'eps', etc.
+    section         = db.Column(db.String(20), nullable=False, index=True)
     code            = db.Column(db.String(30), unique=True, nullable=False)
     process         = db.Column(db.String(200), nullable=False)
     school          = db.Column(db.String(200), nullable=False)
@@ -38,8 +38,18 @@ class SectionRecord(db.Model):
     processing_days = db.Column(db.Integer, nullable=True)
     remarks         = db.Column(db.Text, nullable=True)
 
+    # ── HRD-only columns (nullable, ignored by all other sections) ──────
+    hrd_title           = db.Column(db.String(300), nullable=True)
+    hrd_impl_date_start = db.Column(db.Date,        nullable=True)
+    hrd_impl_date_end   = db.Column(db.Date,        nullable=True)
+    hrd_venue           = db.Column(db.String(300), nullable=True)
+    hrd_participants_m  = db.Column(db.Integer,     nullable=True)
+    hrd_participants_f  = db.Column(db.Integer,     nullable=True)
+    hrd_eval_rating     = db.Column(db.Numeric(4,2),nullable=True)
+    hrd_topic_matrix    = db.Column(db.Text,        nullable=True)
+
     def to_dict(self):
-        return {
+        d = {
             'id':              self.id,
             'section':         self.section,
             'code':            self.code,
@@ -51,6 +61,23 @@ class SectionRecord(db.Model):
             'processing_days': self.processing_days,
             'remarks':         self.remarks or '',
         }
+        if self.section == 'hrd':
+            d.update({
+                'hrd_title':           self.hrd_title or '',
+                'hrd_impl_date_start': self.hrd_impl_date_start.isoformat() if self.hrd_impl_date_start else '',
+                'hrd_impl_date_end':   self.hrd_impl_date_end.isoformat()   if self.hrd_impl_date_end   else '',
+                'hrd_venue':           self.hrd_venue or '',
+                'hrd_participants_m':  self.hrd_participants_m,
+                'hrd_participants_f':  self.hrd_participants_f,
+                'hrd_participants_t':  (
+                    (self.hrd_participants_m or 0) + (self.hrd_participants_f or 0)
+                    if self.hrd_participants_m is not None or self.hrd_participants_f is not None
+                    else None
+                ),
+                'hrd_eval_rating':     float(self.hrd_eval_rating) if self.hrd_eval_rating is not None else None,
+                'hrd_topic_matrix':    self.hrd_topic_matrix or '',
+            })
+        return d
 
 
 # ── Feedback Model ────────────────────────────────────────────────────────────
@@ -484,6 +511,7 @@ def section_add(section_key):
         dc = request.form.get('date_completed')
         date_received  = date.fromisoformat(dr) if dr else None
         date_completed = date.fromisoformat(dc) if dc else None
+
         record = SectionRecord(
             section         = section_key,
             code            = next_code(section_key),
@@ -495,9 +523,27 @@ def section_add(section_key):
             processing_days = compute_processing_days(date_received, date_completed) if date_received and date_completed else None,
             remarks         = request.form.get('remarks', ''),
         )
+
+        # ── HRD extras ──────────────────────────────────────────────────
+        if section_key == 'hrd':
+            ids  = request.form.get('hrd_impl_date_start')
+            ide  = request.form.get('hrd_impl_date_end')
+            pm   = request.form.get('hrd_participants_m')
+            pf   = request.form.get('hrd_participants_f')
+            er   = request.form.get('hrd_eval_rating')
+            record.hrd_title           = request.form.get('hrd_title', '')
+            record.hrd_impl_date_start = date.fromisoformat(ids) if ids else None
+            record.hrd_impl_date_end   = date.fromisoformat(ide) if ide else None
+            record.hrd_venue           = request.form.get('hrd_venue', '')
+            record.hrd_participants_m  = int(pm) if pm else None
+            record.hrd_participants_f  = int(pf) if pf else None
+            record.hrd_eval_rating     = float(er) if er else None
+            record.hrd_topic_matrix    = request.form.get('hrd_topic_matrix', '')
+
         db.session.add(record)
         db.session.commit()
         return redirect(url_for('section_view', section_key=section_key))
+
     return render_template('section_form.html',
         sections=SECTIONS, active=section_key,
         meta=meta, mode='add', record=None,
@@ -507,6 +553,7 @@ def section_add(section_key):
         statuses=STATUSES,
         section_key=section_key,
     )
+
 
 @app.route('/<section_key>/edit/<int:record_id>', methods=['GET', 'POST'])
 def section_edit(section_key, record_id):
@@ -519,6 +566,7 @@ def section_edit(section_key, record_id):
         dc = request.form.get('date_completed')
         date_received  = date.fromisoformat(dr) if dr else None
         date_completed = date.fromisoformat(dc) if dc else None
+
         record.process         = request.form['process']
         record.school          = request.form['school']
         record.date_received   = date_received
@@ -526,8 +574,26 @@ def section_edit(section_key, record_id):
         record.date_completed  = date_completed
         record.processing_days = compute_processing_days(date_received, date_completed) if date_received and date_completed else None
         record.remarks         = request.form.get('remarks', '')
+
+        # ── HRD extras ──────────────────────────────────────────────────
+        if section_key == 'hrd':
+            ids  = request.form.get('hrd_impl_date_start')
+            ide  = request.form.get('hrd_impl_date_end')
+            pm   = request.form.get('hrd_participants_m')
+            pf   = request.form.get('hrd_participants_f')
+            er   = request.form.get('hrd_eval_rating')
+            record.hrd_title           = request.form.get('hrd_title', '')
+            record.hrd_impl_date_start = date.fromisoformat(ids) if ids else None
+            record.hrd_impl_date_end   = date.fromisoformat(ide) if ide else None
+            record.hrd_venue           = request.form.get('hrd_venue', '')
+            record.hrd_participants_m  = int(pm) if pm else None
+            record.hrd_participants_f  = int(pf) if pf else None
+            record.hrd_eval_rating     = float(er) if er else None
+            record.hrd_topic_matrix    = request.form.get('hrd_topic_matrix', '')
+
         db.session.commit()
         return redirect(url_for('section_view', section_key=section_key))
+
     return render_template('section_form.html',
         sections=SECTIONS, active=section_key,
         meta=meta, mode='edit', record=record,
