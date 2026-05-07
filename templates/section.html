@@ -1,8 +1,4 @@
 {% extends "base.html" %} {% block extra_css %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('static', filename='css/section.css') }}"
-/>
 {% endblock %} {% block content %}
 <div
   class="section-page"
@@ -509,11 +505,11 @@
           </th>
 
           {% if section_key == 'hrd' %}
-          <th class="sortable" data-col="hrd-title" data-type="text">
+          <th class="sortable hrd-title-col" data-col="hrd-title" data-type="text">
             Title <span class="sort-indicator"></span>
           </th>
           <th>Implementation<br />Date</th>
-          <th>Venue</th>
+          <th class="hrd-venue-col">Venue</th>
           <th class="col-participants">
             No. of Participants
             <div class="participants-subheader">
@@ -562,7 +558,7 @@
           <td>{{ r.school }}</td>
 
           {% if section_key == 'hrd' %}
-          <td data-export="{{ r.hrd_title or '' }}">
+          <td class="hrd-title-col" data-export="{{ r.hrd_title or '' }}">
             {{ r.hrd_title or '—' }}
           </td>
           <td class="impl-date-cell"
@@ -578,7 +574,7 @@
               {{ r.hrd_impl_date_start.strftime('%b %-d, %Y') }}
             {% else %}—{% endif %}
           </td>
-          <td data-export="{{ r.hrd_venue or '' }}">
+          <td class="hrd-venue-col" data-export="{{ r.hrd_venue or '' }}">
             {{ r.hrd_venue or '—' }}
           </td>
           <td class="participants-cell"

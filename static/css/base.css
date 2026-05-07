@@ -1996,3 +1996,23 @@ tr.row-selected td {
   white-space: nowrap;
   font-size: 0.82rem;
 }
+
+/* Processing days — over limit highlight */
+td.over-limit {
+  color: #dc2626;
+  background-color: #fadcdc;
+  font-weight: 600;
+}
+
+/* ── HRD-specific column widths ─────────────────────────────────────────── */
+.hrd-title-col {
+  min-width: 220px;
+  white-space: normal !important;
+  word-break: break-word;
+}
+
+.hrd-venue-col {
+  min-width: 180px;
+  white-space: normal !important;
+  word-break: break-word;
+}
