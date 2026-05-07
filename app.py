@@ -266,6 +266,10 @@ CHANGELOG = [
         "title": "HRD table layout fixes and cleanup",
         "entries": [
             {
+            "tag": "fix",
+            "text": "Fixed stat values design to prevent wrapping to multiple lines on the dashboard"
+            },
+            {
                 "tag": "fix",
                 "text": "Fixed title and venue columns in the HRD table not wrapping text correctly"
             },

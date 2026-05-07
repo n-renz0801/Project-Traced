@@ -312,6 +312,7 @@
   /* no padding-right by default — only solo cards need ghost-icon clearance */
   overflow: visible;
   word-break: break-word;
+  white-space: nowrap;
 }
 
 /* Solo-value cards (total + avg): number fills the card alone, so add
@@ -376,11 +377,13 @@
 
 /* The body block inside top card */
 .stat-card--top .stat-card-body {
-  flex: 0 0 auto;
-  justify-content: flex-start;
+  flex-shrink: 0;
+  max-width: unset;
   width: auto;
-  min-width: 0;
-  max-width: 200px;
+}
+
+.stat-card--top .stat-value {
+  white-space: nowrap;
 }
 
 /* Two-column row: left = stat-value, right = badge stacked above full name */
@@ -431,6 +434,7 @@
   justify-content: center;
   gap: 0.55rem;
   min-width: 0;
+  max-width: 400px;
   /* ensure bars never get squeezed to zero */
   padding-left: 1rem;
   overflow: visible;
