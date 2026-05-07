@@ -259,10 +259,26 @@ def get_section_meta(section_key):
     return meta
 
 CHANGELOG = [
+        {
+        "version": "v1.7",
+        "date": "May 7, 2026",
+        "color": "blue",
+        "title": "HRD table layout fixes and cleanup",
+        "entries": [
+            {
+                "tag": "fix",
+                "text": "Fixed title and venue columns in the HRD table not wrapping text correctly"
+            },
+            {
+                "tag": "chore",
+                "text": "Removed unnecessary files to keep the project structure clean"
+            }
+        ]
+    },
     {
         "version": "v1.6",
         "date": "May 6, 2026",
-        "color": "blue",
+        "color": "gray",
         "title": "Access control improvements, bulk actions & UI refinements",
         "entries": [
             {
