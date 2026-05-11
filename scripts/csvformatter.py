@@ -167,8 +167,8 @@ def clean_topic(text):
 
 # ─── MAIN ────────────────────────────────────────────────────────────────────
 
-INPUT_FILE  = "hrdfiles.xlsx"
-OUTPUT_FILE = "hrd.csv"
+INPUT_FILE  = "hrd_new1.xlsx"
+OUTPUT_FILE = "hrdnewout.csv"
 
 HEADERS = [
     "code", "Process", "Name of School", "Title",
