@@ -1,3 +1,10 @@
 instance
 __pycache__
 adobe_illustrator/
+
+# Excel files
+*.xlsx
+*.xls
+
+# Optional CSV exports
+*.csv
