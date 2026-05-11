@@ -3,15 +3,22 @@ import os
 SKIP = {"env", "__pycache__", ".git", ".venv", "node_modules"}
 
 def print_tree(root=".", prefix=""):
-    entries = sorted(os.listdir(root))
-    for entry in entries:
-        if entry in SKIP:
-            continue
-        path = os.path.join(root, entry)
-        if os.path.isdir(path):
-            print(f"{prefix}\\{entry}")
-            print_tree(path, prefix + "   ")
-        else:
-            print(f"{prefix}| {entry}")
+    entries = sorted(
+        [e for e in os.listdir(root) if e not in SKIP]
+    )
 
+    for index, entry in enumerate(entries):
+        path = os.path.join(root, entry)
+
+        is_last = index == len(entries) - 1
+
+        connector = "└── " if is_last else "├── "
+
+        print(prefix + connector + entry)
+
+        if os.path.isdir(path):
+            extension = "    " if is_last else "│   "
+            print_tree(path, prefix + extension)
+
+print(os.path.basename(os.getcwd()) + "/")
 print_tree()
