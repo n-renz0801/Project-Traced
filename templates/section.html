@@ -671,7 +671,6 @@
                   </svg>
                   Edit
                 </a>
-                <!-- {% if session.get('admin_role') == 'superadmin' %} --> 
                 <form
                   method="POST"
                   action="{{ url_for('section_delete', section_key=section_key, record_id=r.id) }}"
@@ -700,7 +699,6 @@
                     Delete
                   </button>
                 </form>
-                <!-- {% endif %} -->
               </div>
             </div>
           </td>

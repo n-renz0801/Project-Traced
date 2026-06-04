@@ -638,7 +638,7 @@ def section_edit(section_key, record_id):
 
 @app.route('/<section_key>/delete/<int:record_id>', methods=['POST'])
 def section_delete(section_key, record_id):
-    if not is_superadmin():
+    if not is_admin():
         abort(403)
     get_section_meta(section_key)
     record = SectionRecord.query.filter_by(id=record_id, section=section_key).first_or_404()
