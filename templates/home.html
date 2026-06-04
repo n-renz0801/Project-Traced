@@ -214,8 +214,9 @@
 
       {# Right: top-3 bars #}
       <div class="top3-bars">
-        {% set max_count = top3[0].record_count %} {% for s in top3[:3] %} {%
-        set pct = ((s.record_count / max_count) * 100) | round | int %}
+        {% set max_count = top3[0].record_count %} {% for s in top3[:3] %} {% if
+        max_count > 0 %} {% set pct = ((s.record_count / max_count) * 100) |
+        round | int %} {% else %} {% set pct = 0 %} {% endif %}
         <div class="top3-row">
           <span class="top3-name">{{ s.label }}</span>
           <div class="bar-track">
