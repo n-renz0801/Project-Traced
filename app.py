@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://project_traced_june_user:hr9tWP6HdxVWR0xM9NEOSC2cGHGiX4dX@dpg-d8ge32egvqtc73emc9v0-a.ohio-postgres.render.com/project_traced_june'
-app.config['SECRET_KEY'] = 'projectTRACEDkey123'
+app.config['SECRET_KEY'] = 'projectTRACEDkey1234'
 db = SQLAlchemy(app)
 
 # ── Admin Model ───────────────────────────────────────────────────────────────
