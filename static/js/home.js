@@ -62,28 +62,77 @@ document.getElementById("home-export-print").addEventListener("click", () => {
   window.print();
 });
 
-document.getElementById("home-export-csv").addEventListener("click", () => {
-  homeExportDropdown.classList.remove("open");
-  homeExportTrigger.classList.remove("active");
+document
+  .getElementById("home-export-csv")
+  .addEventListener("click", async () => {
+    homeExportDropdown.classList.remove("open");
+    homeExportTrigger.classList.remove("active");
 
-  const rows = [["Section", "Full Name", "Records", "Avg. Processing Days"]];
-  document.querySelectorAll(".section-card").forEach((card) => {
-    const label =
-      card.querySelector(".section-label")?.textContent.trim() ?? "";
-    const full = card.querySelector(".section-full")?.textContent.trim() ?? "";
-    const stats = card.querySelectorAll(".section-stat-value");
-    const records = stats[0]?.textContent.trim() ?? "";
-    const avgDays = stats[1]?.textContent.trim() ?? "";
-    rows.push([label, full, records, avgDays]);
+    try {
+      const res = await fetch("/api/sections/export-all");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Could not export records. Please try again.");
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") || "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match ? match[1] : "traced-all-sections.csv";
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      alert("Could not export records. Please try again.");
+    }
   });
 
-  const escape = (v) => `"${String(v).replace(/"/g, '""')}"`;
-  const csv = rows.map((r) => r.map(escape).join(",")).join("\n");
+/* ── Home Import (all sections) ──────────────────────────────────────────── */
+const homeImportTrigger = document.getElementById("home-import-trigger");
+const homeImportFileInput = document.getElementById("home-import-file-input");
 
-  const a = document.createElement("a");
-  a.href = `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
-  a.download = "traced-sections-summary.csv";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-});
+if (homeImportTrigger && homeImportFileInput) {
+  homeImportTrigger.addEventListener("click", () =>
+    homeImportFileInput.click(),
+  );
+
+  homeImportFileInput.addEventListener("change", async () => {
+    const file = homeImportFileInput.files[0];
+    if (!file) return;
+
+    homeImportTrigger.disabled = true;
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/sections/import-all", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        const skippedMsg = data.skipped
+          ? `, skipped ${data.skipped} row${data.skipped !== 1 ? "s" : ""} (unrecognized section or missing required fields)`
+          : "";
+        alert(
+          `Imported ${data.imported} record${data.imported !== 1 ? "s" : ""} across sections${skippedMsg}.`,
+        );
+        window.location.reload();
+        return;
+      }
+      alert(data.error || "Import failed.");
+    } catch (err) {
+      alert("Import failed. Please try again.");
+    } finally {
+      homeImportTrigger.disabled = false;
+      homeImportFileInput.value = "";
+    }
+  });
+}

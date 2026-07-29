@@ -604,6 +604,186 @@ def feedback_log():
                            active="feedback_log", timedelta=timedelta)
 
 
+# ── All-Sections Export / Import (Dashboard) ──────────────────────────────────
+
+ALL_SECTIONS_EXPORT_HEADERS = [
+    "Section", "Code", "Process", "Name of School", "Date Received", "Status",
+    "Date Completed / Forwarded", "Processing Time (Days)", "Remarks",
+    "Title", "Implementation Date Start", "Implementation Date End", "Venue",
+    "Participants M", "Participants F", "Evaluation Rating", "Topic/Matrix",
+]
+
+
+@app.route("/api/sections/export-all")
+def api_export_all_sections():
+    if not session.get('is_admin'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    records = SectionRecord.query.order_by(SectionRecord.section, SectionRecord.id).all()
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(ALL_SECTIONS_EXPORT_HEADERS)
+    for r in records:
+        writer.writerow([
+            r.section,
+            r.code,
+            r.process,
+            r.school,
+            r.date_received.isoformat() if r.date_received else "",
+            r.status,
+            r.date_completed.isoformat() if r.date_completed else "",
+            r.processing_days if r.processing_days is not None else "",
+            r.remarks or "",
+            r.hrd_title or "",
+            r.hrd_impl_date_start.isoformat() if r.hrd_impl_date_start else "",
+            r.hrd_impl_date_end.isoformat() if r.hrd_impl_date_end else "",
+            r.hrd_venue or "",
+            r.hrd_participants_m if r.hrd_participants_m is not None else "",
+            r.hrd_participants_f if r.hrd_participants_f is not None else "",
+            float(r.hrd_eval_rating) if r.hrd_eval_rating is not None else "",
+            r.hrd_topic_matrix or "",
+        ])
+
+    csv_data = buffer.getvalue()
+    buffer.close()
+
+    filename = f"traced_all_sections_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@app.route("/api/sections/import-all", methods=["POST"])
+def api_import_all_sections():
+    if not session.get('is_admin'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    file = request.files.get("file")
+    if not file or file.filename == "":
+        return jsonify({"success": False, "error": "No file provided."}), 400
+    if not file.filename.lower().endswith(".csv"):
+        return jsonify({"success": False, "error": "Please upload a .csv file."}), 400
+
+    try:
+        stream = io.StringIO(file.stream.read().decode("utf-8-sig"))
+        reader = csv.DictReader(stream)
+    except Exception:
+        return jsonify({"success": False, "error": "Could not read the file. Make sure it's a valid CSV."}), 400
+
+    if not reader.fieldnames:
+        return jsonify({"success": False, "error": "CSV appears to be empty."}), 400
+
+    field_map = {f.strip().lower(): f for f in reader.fieldnames}
+    if "section" not in field_map:
+        return jsonify({"success": False, "error": "CSV must include a 'Section' column."}), 400
+
+    valid_sections = {s['id'] for s in SECTIONS}
+
+    def get(row, key, default=""):
+        col = field_map.get(key)
+        val = row.get(col) if col else None
+        return (val or default).strip()
+
+    def safe_int(val):
+        try:
+            return int(float(val)) if str(val).strip() not in ('', '—') else None
+        except (ValueError, TypeError):
+            return None
+
+    def safe_float(val):
+        try:
+            return float(val) if str(val).strip() not in ('', '—') else None
+        except (ValueError, TypeError):
+            return None
+
+    counters = {}  # section_key -> last-used numeric suffix for this year
+    year = date.today().year
+
+    def next_counter(section_key):
+        if section_key not in counters:
+            last = (
+                SectionRecord.query
+                .filter_by(section=section_key)
+                .filter(SectionRecord.code.like(f'{section_key.upper()}{year}__%'))
+                .order_by(SectionRecord.id.desc())
+                .first()
+            )
+            if last:
+                try:
+                    counters[section_key] = int(last.code.split('__')[-1])
+                except ValueError:
+                    counters[section_key] = 0
+            else:
+                counters[section_key] = 0
+        counters[section_key] += 1
+        return counters[section_key]
+
+    imported = 0
+    skipped = 0
+    unrecognized_sections = set()
+
+    try:
+        for row in reader:
+            section_key = get(row, "section").lower()
+            if section_key not in valid_sections:
+                skipped += 1
+                if section_key:
+                    unrecognized_sections.add(section_key)
+                continue
+
+            process = get(row, "process")
+            school = get(row, "name of school")
+            status = get(row, "status")
+            if not process or not school or not status:
+                skipped += 1
+                continue
+
+            counter = next_counter(section_key)
+            new_code = f"{section_key.upper()}{year}__{counter:02d}"
+
+            record = SectionRecord(
+                section         = section_key,
+                code            = new_code,
+                process         = process,
+                school          = school,
+                date_received   = parse_date(get(row, "date received")),
+                status          = status,
+                date_completed  = parse_date(get(row, "date completed / forwarded")),
+                processing_days = safe_int(get(row, "processing time (days)")),
+                remarks         = get(row, "remarks"),
+            )
+
+            if section_key == "hrd":
+                record.hrd_title           = get(row, "title")
+                record.hrd_impl_date_start = parse_date(get(row, "implementation date start"))
+                record.hrd_impl_date_end   = parse_date(get(row, "implementation date end"))
+                record.hrd_venue           = get(row, "venue")
+                record.hrd_participants_m  = safe_int(get(row, "participants m"))
+                record.hrd_participants_f  = safe_int(get(row, "participants f"))
+                record.hrd_eval_rating     = safe_float(get(row, "evaluation rating"))
+                record.hrd_topic_matrix    = get(row, "topic/matrix")
+
+            db.session.add(record)
+            imported += 1
+
+        if imported == 0:
+            db.session.rollback()
+            err = "No valid rows found to import."
+            if unrecognized_sections:
+                err += f" Unrecognized section(s): {', '.join(sorted(unrecognized_sections))}."
+            return jsonify({"success": False, "error": err}), 400
+
+        db.session.commit()
+    except Exception as ex:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(ex)}), 500
+
+    return jsonify({"success": True, "imported": imported, "skipped": skipped})
+
+
 # ── Generic Section Routes (one set handles ALL sections) ────────────────────
 
 @app.route('/<section_key>')
