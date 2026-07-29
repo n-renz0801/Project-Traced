@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session, abort
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, abort, Response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from datetime import date, timedelta, datetime
 import holidays
+import csv
+import io
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -511,6 +513,87 @@ def api_delete_feedback(entry_id):
     db.session.delete(entry)
     db.session.commit()
     return jsonify({"success": True, "deleted_id": entry_id})
+
+
+@app.route("/api/feedback/export")
+def api_export_feedback():
+    entries = FeedbackRating.query.order_by(FeedbackRating.id.asc()).all()
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["id", "rating", "submitted_at"])
+    for e in entries:
+        writer.writerow([e.id, e.rating, e.submitted_at.isoformat()])
+
+    csv_data = buffer.getvalue()
+    buffer.close()
+
+    filename = f"feedback_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@app.route("/api/feedback/import", methods=["POST"])
+def api_import_feedback():
+    file = request.files.get("file")
+    if not file or file.filename == "":
+        return jsonify({"success": False, "error": "No file provided."}), 400
+
+    if not file.filename.lower().endswith(".csv"):
+        return jsonify({"success": False, "error": "Please upload a .csv file."}), 400
+
+    try:
+        stream = io.StringIO(file.stream.read().decode("utf-8-sig"))
+        reader = csv.DictReader(stream)
+    except Exception:
+        return jsonify({"success": False, "error": "Could not read the file. Make sure it's a valid CSV."}), 400
+
+    if not reader.fieldnames:
+        return jsonify({"success": False, "error": "CSV appears to be empty."}), 400
+
+    field_map = {f.strip().lower(): f for f in reader.fieldnames}
+    if "rating" not in field_map:
+        return jsonify({"success": False, "error": "CSV must include a 'rating' column."}), 400
+
+    imported = 0
+    skipped = 0
+
+    for row in reader:
+        raw_rating = (row.get(field_map["rating"]) or "").strip()
+        try:
+            rating = int(float(raw_rating))
+        except (ValueError, TypeError):
+            skipped += 1
+            continue
+        if rating < 1 or rating > 5:
+            skipped += 1
+            continue
+
+        submitted_at = None
+        if "submitted_at" in field_map:
+            raw_date = (row.get(field_map["submitted_at"]) or "").strip()
+            if raw_date:
+                try:
+                    submitted_at = datetime.fromisoformat(raw_date)
+                except ValueError:
+                    submitted_at = None
+
+        entry = FeedbackRating(rating=rating)
+        if submitted_at:
+            entry.submitted_at = submitted_at
+        db.session.add(entry)
+        imported += 1
+
+    if imported == 0:
+        db.session.rollback()
+        return jsonify({"success": False, "error": "No valid rows found to import."}), 400
+
+    db.session.commit()
+    stats = get_feedback_stats()
+    return jsonify({"success": True, "imported": imported, "skipped": skipped, "stats": stats})
 
 
 @app.route("/feedback-log")

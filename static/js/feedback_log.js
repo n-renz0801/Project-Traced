@@ -18,6 +18,9 @@
   const modalBody = document.getElementById("modal-body");
   const modalConfirmBtn = document.getElementById("modal-confirm");
   const modalCancelBtn = document.getElementById("modal-cancel");
+  const exportBtn = document.getElementById("export-btn");
+  const importBtn = document.getElementById("import-btn");
+  const importFileInput = document.getElementById("import-file-input");
 
   // Pill stats (header)
   const pillAvg = document.getElementById("pill-avg");
@@ -243,6 +246,72 @@
     if (checked.length === 0) return;
     const ids = checked.map((r) => parseInt(r.dataset.id, 10));
     openModal(ids, checked);
+  });
+
+  // ── Export ────────────────────────────────────────────────────────────────
+
+  exportBtn.addEventListener("click", async () => {
+    const url = exportBtn.dataset.exportUrl;
+    exportBtn.disabled = true;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Export failed");
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") || "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match ? match[1] : "feedback_log.csv";
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      alert("Could not export feedback data. Please try again.");
+    } finally {
+      exportBtn.disabled = false;
+    }
+  });
+
+  // ── Import ────────────────────────────────────────────────────────────────
+
+  importBtn.addEventListener("click", () => importFileInput.click());
+
+  importFileInput.addEventListener("change", async () => {
+    const file = importFileInput.files[0];
+    if (!file) return;
+
+    importBtn.disabled = true;
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/feedback/import", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        const skippedMsg = data.skipped
+          ? `, skipped ${data.skipped} invalid row${data.skipped !== 1 ? "s" : ""}`
+          : "";
+        alert(
+          `Imported ${data.imported} entr${data.imported !== 1 ? "ies" : "y"}${skippedMsg}.`,
+        );
+        window.location.reload();
+        return;
+      }
+      alert(data.error || "Import failed.");
+    } catch (err) {
+      alert("Import failed. Please try again.");
+    } finally {
+      importBtn.disabled = false;
+      importFileInput.value = "";
+    }
   });
 
   // ── Live stats refresh (after deletions) ──────────────────────────────────
