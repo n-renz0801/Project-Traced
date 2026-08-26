@@ -13,5 +13,5 @@ push to git:
 - git push
 
 to add admins:
-
+login as 'renz_super'; pass: 'SGOD@urservice'
 - https://project-traced.onrender.com/admin/manage
