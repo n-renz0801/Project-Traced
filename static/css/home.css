@@ -144,6 +144,13 @@
   padding: 1rem 0 1.25rem;
 }
 
+.masthead-logo {
+  height: 4.5rem;
+  width: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
 .masthead-divider {
   width: 5px;
   align-self: stretch;
